@@ -16,7 +16,7 @@ SRCS_FOLDER = ./src
 
 INCLUDE_FOLDER = ./include
 
-FILES_NAMES = main.cpp 
+FILES_NAMES = main.cpp Server.cpp 
 
 FILES = $(addprefix $(SRCS_FOLDER)/,$(FILES_NAMES))
 

@@ -1,6 +1,6 @@
 #include "Server.hpp"
 
-Server::Server()
+Server::Server(int portNumber)
 {
     std::memset(&address,0,sizeof(address));
     // Create a TCP socket (SOCK_STREAM).
@@ -28,19 +28,43 @@ Server::Server()
     
     //  Bind the Socket to the Address and Port
     address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = htons(8080);
+	address.sin_port = htons(portNumber);
 	address.sin_family = AF_INET;  
     if (bind(serverFd, (struct sockaddr *)&address, sizeof(address)) < 0)
 		throw std::runtime_error("Bind Error");
     else
     if (listen(serverFd, 50) < 0)
     throw std::runtime_error("Listen Error");  
-    else
-    std::cout << "✅ Server is listening on port 8080\n";
+    
 
 }
 Server::~Server()
 {
 
 }
+Server::Server(const Server& src)
+{
+	if (this == &src)
+		return ;
+	*this = src;
+	// conf = src.conf;
+}
+
+Server& Server::operator = (const Server& src)
+{
+	if (this == &src)
+		return *this;
+	this->address = src.address;
+	// this->addrlen = src.addrlen;
+	this->serverFd = src.serverFd;
+	// this->conf = src.conf;
+	return *this;
+}
+
+int Server::getServerFd() const { return serverFd; }
+
+struct sockaddr *Server::getAddress() const { return  ((struct sockaddr *)&address); }
+
+socklen_t *Server::getAddrlen() const { return ((socklen_t*)&addrlen); }
+
 

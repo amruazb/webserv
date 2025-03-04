@@ -1,17 +1,14 @@
 #include "webserv.hpp"
 
 int main() {
-    try {
-        Server server;  // Create the server instance
-        std::cout << "Server initialized successfully on port 8080.\n";
+    
+        std::vector<int> ports;
+        ports.push_back(8080);
+        ports.push_back(9090);
 
-        while (true) {
-            sleep(1); // Keep the server alive
+        ServerManager serverManager(ports);
+        serverManager.run();
+
+        return(0);
         }
-    }
-    catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-    return EXIT_SUCCESS;
-}
+   

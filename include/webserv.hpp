@@ -7,5 +7,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "Server.hpp"
+#include <poll.h>
+#include <vector>
+#include <map>
+#include "ServerManager.hpp"
+#include <csignal>
 
 

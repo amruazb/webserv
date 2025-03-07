@@ -90,8 +90,9 @@ void ServerManager::run()
                     --i;
                     continue;
                 }
+                
                 clientBuffers[pfd.fd] += std::string(buffer, bytesRead);
-                //check whether the HTTP request is complete or partial by analysing the client data
+                    //check whether the HTTP request is complete or partial by analysing the client data
                 isReqComplete[pfd.fd] = partialRequest(clientBuffers[pfd.fd]);
                 std::cout << "📩 Received from client FD " << pfd.fd << ": " << buffer << std::endl;
             }
@@ -104,16 +105,16 @@ void ServerManager::run()
 
             else if (pfd.revents & POLLOUT && i >= servers.size()&& isReqComplete[pfd.fd] == true) 
             {
-                std::string response = "HTTP/1.1 200 NOT FOUND\r\nContent-Length: 13\r\n\r\nHello, World!";
+                std::cout << "Current request buffer for FD " << pfd.fd << ": " << clientBuffers[pfd.fd] << std::endl;
+                std::string response = ManageRequest(clientBuffers[pfd.fd]);
+
+                // if (response.empty()) {
+                //     response = generateErrorResponse("400", "Bad Request");
+                // }
+
+                std::cout << "📤 Sent response to FD " << pfd.fd << ": " << response << std::endl;
                 send(pfd.fd, response.c_str(), response.length(), 0);
 
-                std::cout << "📤 Sent response to FD " << pfd.fd << std::endl;
-                // std::string res = ManageRequest(clientBuffers[pfd.fd]);
-				// send(pfd.fd, res.c_str(),
-				// 	sizeof(res), 0);
-				
-				// isReqComplete[pfd.fd] = false;
-                // Close connection after response
                 close(pfd.fd);
                 sockets.erase(sockets.begin() + i);
                 clientBuffers.erase(pfd.fd);
@@ -123,12 +124,62 @@ void ServerManager::run()
             }
     }
 }
-// std::string ServerManager::ManageRequest(const std::string& buffer)
+std::string generateErrorResponse(const std::string &statusCode, const std::string& statusMessage) {
+    std::ostringstream response;
+
+    std::string body = "<html><head><title>" + statusMessage + "</title></head>"
+                       "<body><h1>" + statusMessage + "</h1></body></html>";
+
+    response << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
+    response << "Content-Type: text/html\r\n";
+    response << "Content-Length: " << body.length() << "\r\n";
+    response << "Connection: close\r\n";
+    response << "\r\n";
+    response << body;
+
+
+    return response.str();
+}
+// static std::vector<Server>::iterator findServer(std::vector<Server>::iterator start, std::vector<Server>::iterator end, const std::string& host)
 // {
-
-
-
+//     std::vector<Server>::iterator it;  
+//   	std::string hst = host;
+// 	in_port_t port = 0;
+// 	in_addr_t address = 0;
+//     if (hst.find(':') == std::string::npos)
+//         throw std::runtime_error("400");
 // }
+void ServerManager::ProcessResponse(Request &request)
+{
+    std::string host = request.getHost();
+
+    if (host.empty()) 
+        throw std::runtime_error("400"); 
+    // std::vector<Server>::iterator serv_it = findServer(
+	// 	servers.begin(), servers.end(), host);
+}
+std::string ServerManager::ManageRequest(const std::string& buffer)
+{
+    std::string Response;
+    std::string arr[] = {"400", "403", "404", "405", "500", "504"};
+    std::string msgArr[] = {"Bad Request", "Forbidden", "Not Found", "Method Not Allowed",
+        "Internal Server Error", "Gateway Timeout"};
+
+    try
+    {
+
+        Request request(buffer);
+        
+        ProcessResponse(request);
+    }
+    catch (const std::exception& e)
+    {
+        std::string what = e.what();
+        Response = generateErrorResponse(what, msgArr[(std::find(arr, arr + 6, what) - arr)]);
+    }
+    return Response;
+}
+
 // Graceful shutdown handler
 void handle_exit(int sig)
 {

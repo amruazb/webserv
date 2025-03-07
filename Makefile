@@ -6,7 +6,7 @@
 #    By: shmuhamm <shmuhamm@student.42abudhabi.a    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/02/27 11:57:01 by shmuhamm          #+#    #+#              #
-#    Updated: 2025/02/27 12:03:13 by shmuhamm         ###   ########.fr        #
+#    Updated: 2025/03/06 13:05:53 by shmuhamm         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -16,7 +16,7 @@ SRCS_FOLDER = ./src
 
 INCLUDE_FOLDER = ./include
 
-FILES_NAMES = main.cpp Server.cpp ServerManager.cpp
+FILES_NAMES = main.cpp Server.cpp ServerManager.cpp Request.cpp
 
 FILES = $(addprefix $(SRCS_FOLDER)/,$(FILES_NAMES))
 

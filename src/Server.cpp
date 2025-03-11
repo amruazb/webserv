@@ -1,8 +1,11 @@
 #include "Server.hpp"
 
-Server::Server(int portNumber)
+Server::Server(const ServerTraits& cnf) : conf(cnf)
 {
     std::memset(&address,0,sizeof(address));
+    address.sin_addr.s_addr = conf.listen_address;
+    address.sin_port = conf.listen_port;
+    address.sin_family = AF_INET;
     // Create a TCP socket (SOCK_STREAM).
     serverFd = socket(AF_INET,SOCK_STREAM, 0);
     if (serverFd < 0)
@@ -27,12 +30,9 @@ Server::Server(int portNumber)
 		throw std::runtime_error("setsockopt Error");
     
     //  Bind the Socket to the Address and Port
-    address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = htons(portNumber);
-	address.sin_family = AF_INET;  
     if (bind(serverFd, (struct sockaddr *)&address, sizeof(address)) < 0)
 		throw std::runtime_error("Bind Error");
-    else
+  
     if (listen(serverFd, 50) < 0)
     throw std::runtime_error("Listen Error");  
     
@@ -66,5 +66,7 @@ int Server::getServerFd() const { return serverFd; }
 struct sockaddr *Server::getAddress() const { return  ((struct sockaddr *)&address); }
 
 socklen_t *Server::getAddrlen() const { return ((socklen_t*)&addrlen); }
+
+const ServerTraits& Server::getConf() const { return (conf); }
 
 

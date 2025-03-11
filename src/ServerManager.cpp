@@ -6,11 +6,12 @@ bool isExit = false;
 //          Discuss how address and ip address (obtained from server.config)are stored
 //          needs to change the server constructor accordingly
 
-ServerManager::ServerManager(const std::vector<int>& ports)
+ServerManager::ServerManager(const std::vector<ServerTraits>& cnf)
 {
     try {
-        for (size_t i = 0; i < ports.size(); ++i) {
-            servers.push_back(Server(ports[i])); // Create servers
+        for (size_t i = 0; i < cnf.size(); ++i) 
+        {
+            servers.push_back(Server(cnf[i])); // Create servers
 
             // Add server sockets to poll list
             struct pollfd pfd;
@@ -20,7 +21,7 @@ ServerManager::ServerManager(const std::vector<int>& ports)
 
             sockets.push_back(pfd);  // Now push the initialized struct into the vector
 
-            std::cout << "✅ Server is listening on port " << ports[i] << std::endl;
+            std::cout << "✅ Server is listening on port " << cnf[i].listen_port << std::endl;
         }
     } catch (const std::exception &e) {
         std::cerr << "❌ Error: " << e.what() << std::endl;
@@ -140,23 +141,52 @@ std::string generateErrorResponse(const std::string &statusCode, const std::stri
 
     return response.str();
 }
-// static std::vector<Server>::iterator findServer(std::vector<Server>::iterator start, std::vector<Server>::iterator end, const std::string& host)
-// {
-//     std::vector<Server>::iterator it;  
-//   	std::string hst = host;
-// 	in_port_t port = 0;
-// 	in_addr_t address = 0;
-//     if (hst.find(':') == std::string::npos)
-//         throw std::runtime_error("400");
-// }
+/*
+* Find the server that matches the host and port
+* If the host is an IP address, match the address and port
+* If the host is a domain name, match the server name and port
+*/
+static std::vector<Server>::iterator findServer(std::vector<Server>::iterator start, std::vector<Server>::iterator end, const std::string& host)
+{
+    std::vector<Server>::iterator it;  
+  	ft::string hst = host;
+	in_port_t port = 0;
+	in_addr_t address = 0;
+    if (hst.find(':') == std::string::npos)
+        throw std::runtime_error("400");
+    string addStr = hst.substr(0, hst.find(':'));
+    string portStr = hst.substr(hst.find(':') + 1);
+
+    if (std::count(host.begin(), host.end(), '.') == 3)
+	{
+		setAddress(hst, address, port);	
+	} else {
+		setAddress(portStr, address, port);
+	}
+
+    for (it = start; it != end; ++it)
+	{
+		if ((((*it).getConf().listen_address == address)
+			|| ((*it).getConf().listen_address == htonl(INADDR_ANY)))
+			&& (*it).getConf().listen_port == port)
+			return (it);
+		if (((std::find((*it).getConf().server_name.begin(),
+			(*it).getConf().server_name.end(), addStr) != (*it).getConf().server_name.end())
+			|| (std::find((*it).getConf().server_name.begin(),
+			(*it).getConf().server_name.end(), "_") != (*it).getConf().server_name.end()))
+			&& (*it).getConf().listen_port == port)
+			return (it);
+	}
+	return (it);
+}
 void ServerManager::ProcessResponse(Request &request)
 {
     std::string host = request.getHost();
 
     if (host.empty()) 
         throw std::runtime_error("400"); 
-    // std::vector<Server>::iterator serv_it = findServer(
-	// 	servers.begin(), servers.end(), host);
+    std::vector<Server>::iterator serv_it = findServer(
+		servers.begin(), servers.end(), host);
 }
 std::string ServerManager::ManageRequest(const std::string& buffer)
 {

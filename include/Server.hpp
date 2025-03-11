@@ -8,8 +8,11 @@ class Server
         struct sockaddr_in address; 
         int serverFd;
         int addrlen;
+        ServerTraits conf;
+        // There shouldn't be a default constructor
+	    Server();
     public:
-        Server(int portNumber);
+        Server(const ServerTraits& cnf);
         ~Server();
         Server(const Server& src);
 	    Server& operator = (const Server& src);
@@ -17,6 +20,7 @@ class Server
         int getServerFd() const;
         struct sockaddr *getAddress() const;
         socklen_t *getAddrlen() const;
+        const ServerTraits& getConf() const;
+};
         
 
-};

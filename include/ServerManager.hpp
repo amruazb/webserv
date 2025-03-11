@@ -10,9 +10,9 @@ class ServerManager
         std::vector<struct pollfd> sockets;
         std::map<int, std::string> clientBuffers; // To store client data
         std::map<int, bool> isReqComplete;
-
+       
     public:
-        ServerManager(const std::vector<int> &ports);
+        ServerManager(const std::vector<ServerTraits>& cnf);
         ~ServerManager();
         ServerManager(const ServerManager &src);
         ServerManager& operator=(const ServerManager &src);

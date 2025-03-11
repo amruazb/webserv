@@ -14,11 +14,11 @@ NAME	=	webserv
 
 SRCS_FOLDER = ./src
 
-INCLUDE_FOLDER = ./include
+INCLUDE_FOLDER = -I./include -I./lib/string
 
-FILES_NAMES = main.cpp Server.cpp ServerManager.cpp Request.cpp
+FILES_NAMES = main.cpp Server.cpp ServerManager.cpp Request.cpp ConfigParser.cpp
 
-FILES = $(addprefix $(SRCS_FOLDER)/,$(FILES_NAMES))
+FILES = lib/string/ft_string.cpp $(addprefix $(SRCS_FOLDER)/,$(FILES_NAMES))
 
 CXX		=	c++
 
@@ -29,10 +29,10 @@ OBJS	=	$(FILES:.cpp=.o)
 all: 		$(NAME)
 
 .cpp.o:
-			$(CXX) $(CXXFLAGS) -I$(INCLUDE_FOLDER) -c $< -o $@
+			$(CXX) $(CXXFLAGS) $(INCLUDE_FOLDER) -c $< -o $@
 
 $(NAME):	$(OBJS)
-			$(CXX) $(OBJS) $(CXXFLAGS) -I$(INCLUDE_FOLDER) -o $(NAME)
+			$(CXX) $(OBJS) $(CXXFLAGS) $(INCLUDE_FOLDER) -o $(NAME)
 
 clean:
 			/bin/rm -f $(OBJS)

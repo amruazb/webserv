@@ -39,7 +39,7 @@ std::string Request::getHost() const
 {
     std::map<std::string, std::string>::const_iterator it = _headers.find("Host");
     if (it != _headers.end()) {
-        return it->second;
+        return ft::string(it->second).replace_all(" ", "%20");
     }
     return "";
 }

@@ -9,6 +9,7 @@
 #include <poll.h>
 #include <vector>
 #include <map>
+#include <string>
 #include <csignal>
 #include <sstream>
 #include <stdexcept>

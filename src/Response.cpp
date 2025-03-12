@@ -61,6 +61,10 @@ std::string Response::getRes()
     res = header + res_body;
     return res;
 }
+std::string Response::getHeader()
+{
+    return header;
+}
 void Response::setErrBody(std::string body, const Request &req)
 {
     res_body.clear();
@@ -69,7 +73,7 @@ void Response::setErrBody(std::string body, const Request &req)
     if(req.getType() == HEAD)
         res_body.clear();
     header += "Content-Type: " + content_type + "\r\n";
-    header += "Content-Length: " + ft::to_string(content_len) + "\r\n";
+    header += "Content-Length: " + ft::to_string(content_len) + "; charset=utf-8""\r\n";
     // res += "Connection: close\r\n";
     header += "\r\n";
    

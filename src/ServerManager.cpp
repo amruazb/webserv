@@ -95,7 +95,7 @@ void ServerManager::run()
                 clientBuffers[pfd.fd] += std::string(buffer, bytesRead);
                     //check whether the HTTP request is complete or partial by analysing the client data
                 isReqComplete[pfd.fd] = partialRequest(clientBuffers[pfd.fd]);
-                std::cout << "📩 Received from client FD " << pfd.fd << ": " << buffer << std::endl;
+                // std::cout << "📩 Received from client FD " << pfd.fd << ": " << buffer << std::endl;
             }
                 // Send response to clients
                 // 🚀 FIXME: 
@@ -108,13 +108,7 @@ void ServerManager::run()
             {
                 std::cout << "Current request buffer for FD " << pfd.fd << ": " << clientBuffers[pfd.fd] << std::endl;
                 Response response = ManageRequest(clientBuffers[pfd.fd]);
-
-                // if (response.empty()) {
-                //     response = generateErrorResponse("400", "Bad Request");
-                // }
-
-                // std::cout << "📤 Sent response to FD " << pfd.fd << ": " << response << std::endl;
-                // send(pfd.fd, response.c_str(), response.length(), 0);
+                send(pfd.fd, response.getRes().c_str(), response.getRes().length(), 0);
 
                 close(pfd.fd);
                 sockets.erase(sockets.begin() + i);
@@ -146,24 +140,43 @@ static std::vector<Server>::iterator findServer(std::vector<Server>::iterator st
 	{
 		setAddress(hst, address, port);	
 	} else {
-		setAddress(portStr, address, port);
-	}
+        setAddress(portStr, address, port);
+    }
 
-    for (it = start; it != end; ++it)
+    // for (it = start; it != end; ++it)
+	// {
+    //     std::cout << "listen address" << (*it).getConf().listen_address << std::endl;
+    //     std::cout << "listen port" << (*it).getConf().listen_port << std::endl;
+    //     std::cout << "ADRESS" << address << std::endl;
+    //     if ((((*it).getConf().listen_address == address) || ((*it).getConf().listen_address == htonl(INADDR_ANY))) && (*it).getConf().listen_port == port)
+    //         return (it);
+    //     bool foundAddStr = std::find((*it).getConf().server_name.begin(),
+    //                                  (*it).getConf().server_name.end(), addStr) != (*it).getConf().server_name.end();
+    //     bool foundUnderscore = std::find((*it).getConf().server_name.begin(),
+    //                                      (*it).getConf().server_name.end(), "_") != (*it).getConf().server_name.end();
+    //     bool nameMatch = foundAddStr || foundUnderscore;
+    //     bool portMatch = (*it).getConf().listen_port == port;
+
+    //     if (nameMatch && portMatch)
+    //     {
+    //         std::cout << "MATCHING" << std::endl;
+    //         return (it);
+    //     }
+	// }
+    // std::cout << "NO MATCHING" << std::endl;
+	// return (it);
+    	for (it = start; it != end; ++it)
 	{
 		if ((((*it).getConf().listen_address == address)
 			|| ((*it).getConf().listen_address == htonl(INADDR_ANY)))
 			&& (*it).getConf().listen_port == port)
-			    return (it);
-            bool foundAddStr = std::find((*it).getConf().server_name.begin(),
-            (*it).getConf().server_name.end(), addStr) != (*it).getConf().server_name.end();
-            bool foundUnderscore = std::find((*it).getConf().server_name.begin(),
-                            (*it).getConf().server_name.end(), "_") != (*it).getConf().server_name.end();
-            bool nameMatch = foundAddStr || foundUnderscore;
-            bool portMatch = (*it).getConf().listen_port == port;
-
-        if (nameMatch && portMatch)
-                return (it);
+			return (it);
+		if (((std::find((*it).getConf().server_name.begin(),
+			(*it).getConf().server_name.end(), addStr) != (*it).getConf().server_name.end())
+			|| (std::find((*it).getConf().server_name.begin(),
+			(*it).getConf().server_name.end(), "_") != (*it).getConf().server_name.end()))
+			&& (*it).getConf().listen_port == port)
+			return (it);
 	}
 	return (it);
 }
@@ -241,15 +254,15 @@ const	std::string	getErrPage(const std::string& code, const std::string& mssg)
 }
 static void setErrPage(Response &res, const Request &req, const std::string& code, const std::string &mssg, const ServerTraits& conf)
 {
+    (void)conf;
     res.setResponseHeader(code, mssg);
-    if(conf.error_pages.find(code) != conf.error_pages.end())
-    {
-        res.setErrBody(conf.error_pages.find(code)->second, req);
-    }
-    else
-    {
+    // if(conf.error_pages.find(code) != conf.error_pages.end())
+    // {
+    //     res.setErrBody(conf.error_pages.find(code)->second, req);
+    // }
+    // else
         res.setErrBody(getErrPage(code,mssg), req);
-    }    
+       
 }
 
 void ServerManager::ProcessResponse(Request &request)
@@ -257,18 +270,27 @@ void ServerManager::ProcessResponse(Request &request)
     std::string host = request.getHost();
     const ft::string& urlx = request.getReqUrl();
 	string url = urlx;
-    if (host.empty()) 
-        throw std::runtime_error("400"); 
+    if (host.empty())
+        throw std::runtime_error("400");
+   
     std::vector<Server>::iterator serv_it = findServer(
-		servers.begin(), servers.end(), host);
-    
+        servers.begin(), servers.end(), host);
+    if (serv_it == servers.end())
+    {
+        std::cout << "Server not found" << std::endl;
+        throw std::runtime_error("404");
+    }
+    //Get the Server Configuration
 	const ServerTraits& conf = (*serv_it).getConf();
+    
 	normalizeUrl(url);
-	ServerRoute route = getRoute(url, conf);
-	// checkClientBodySize(request, conf);
-	// string path = constructFullPath(route, url);
+    string routeUrl = url;
+    ServerRoute route = getRoute(url, conf);
+    std::cout << route.root << std::endl;
+    // checkClientBodySize(request, conf);
+    // string path = constructFullPath(route, url);
 
-	// throwIfnotAllowed(url, conf, request);
+    // throwIfnotAllowed(url, conf, request);
 
 	// if (redirect(route, res))
 	// 	return ;

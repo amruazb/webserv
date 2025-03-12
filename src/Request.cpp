@@ -43,6 +43,10 @@ std::string Request::getHost() const
     }
     return "";
 }
+e_requestType Request::getType() const
+{
+    return _type;
+}
 
 // int main() {
 //     try {

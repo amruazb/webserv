@@ -3,6 +3,7 @@
 #include "webserv.hpp"
 class Server;
 class Request;
+class Response;
 class ServerManager
 {
     private:
@@ -19,8 +20,23 @@ class ServerManager
 
         void run();
         bool partialRequest(std::string	&buff);
-        std::string ManageRequest(const std::string& buffer);  
-        void ProcessResponse(Request& request);     
+        Response ManageRequest(const std::string& buffer);  
+        void ProcessResponse(Request& request); 
+        void normalizeUrl(string& url);   
+        ServerRoute getRoute(string& url, const ServerTraits& conf);
 };
 void handle_exit(int sig);
 std::string generateErrorResponse(const std::string &statusCode, const std::string &statusMessage);
+
+class ErrorPage : public std::exception
+{
+    private:
+        const ServerTraits& conf;
+        const std::string msg;
+
+    public:
+        ErrorPage(const ServerTraits& conf,std::string msg) : conf(conf),msg(msg) {}
+        virtual const char* what() const throw() { return msg.c_str(); }
+        const ServerTraits& getConf() const { return conf; }
+        virtual ~ErrorPage() throw() {}
+};

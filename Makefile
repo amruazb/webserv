@@ -16,7 +16,7 @@ SRCS_FOLDER = ./src
 
 INCLUDE_FOLDER = -I./include -I./lib/string
 
-FILES_NAMES = main.cpp Server.cpp ServerManager.cpp Request.cpp ConfigParser.cpp
+FILES_NAMES = main.cpp Server.cpp ServerManager.cpp Request.cpp ConfigParser.cpp Response.cpp
 
 FILES = lib/string/ft_string.cpp $(addprefix $(SRCS_FOLDER)/,$(FILES_NAMES))
 

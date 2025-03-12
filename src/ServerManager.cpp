@@ -107,14 +107,14 @@ void ServerManager::run()
             else if (pfd.revents & POLLOUT && i >= servers.size()&& isReqComplete[pfd.fd] == true) 
             {
                 std::cout << "Current request buffer for FD " << pfd.fd << ": " << clientBuffers[pfd.fd] << std::endl;
-                std::string response = ManageRequest(clientBuffers[pfd.fd]);
+                Response response = ManageRequest(clientBuffers[pfd.fd]);
 
                 // if (response.empty()) {
                 //     response = generateErrorResponse("400", "Bad Request");
                 // }
 
-                std::cout << "📤 Sent response to FD " << pfd.fd << ": " << response << std::endl;
-                send(pfd.fd, response.c_str(), response.length(), 0);
+                // std::cout << "📤 Sent response to FD " << pfd.fd << ": " << response << std::endl;
+                // send(pfd.fd, response.c_str(), response.length(), 0);
 
                 close(pfd.fd);
                 sockets.erase(sockets.begin() + i);
@@ -125,22 +125,7 @@ void ServerManager::run()
             }
     }
 }
-std::string generateErrorResponse(const std::string &statusCode, const std::string& statusMessage) {
-    std::ostringstream response;
 
-    std::string body = "<html><head><title>" + statusMessage + "</title></head>"
-                       "<body><h1>" + statusMessage + "</h1></body></html>";
-
-    response << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
-    response << "Content-Type: text/html\r\n";
-    response << "Content-Length: " << body.length() << "\r\n";
-    response << "Connection: close\r\n";
-    response << "\r\n";
-    response << body;
-
-
-    return response.str();
-}
 /*
 * Find the server that matches the host and port
 * If the host is an IP address, match the address and port
@@ -169,45 +154,162 @@ static std::vector<Server>::iterator findServer(std::vector<Server>::iterator st
 		if ((((*it).getConf().listen_address == address)
 			|| ((*it).getConf().listen_address == htonl(INADDR_ANY)))
 			&& (*it).getConf().listen_port == port)
-			return (it);
-		if (((std::find((*it).getConf().server_name.begin(),
-			(*it).getConf().server_name.end(), addStr) != (*it).getConf().server_name.end())
-			|| (std::find((*it).getConf().server_name.begin(),
-			(*it).getConf().server_name.end(), "_") != (*it).getConf().server_name.end()))
-			&& (*it).getConf().listen_port == port)
-			return (it);
+			    return (it);
+            bool foundAddStr = std::find((*it).getConf().server_name.begin(),
+            (*it).getConf().server_name.end(), addStr) != (*it).getConf().server_name.end();
+            bool foundUnderscore = std::find((*it).getConf().server_name.begin(),
+                            (*it).getConf().server_name.end(), "_") != (*it).getConf().server_name.end();
+            bool nameMatch = foundAddStr || foundUnderscore;
+            bool portMatch = (*it).getConf().listen_port == port;
+
+        if (nameMatch && portMatch)
+                return (it);
 	}
 	return (it);
 }
+
+static string getDir(string path)
+{
+	size_t pos = path.rfind('/');
+	if (pos == std::string::npos)
+		throw std::runtime_error("400");
+	else
+		path = path.substr(0, pos);
+	return (path);
+}
+ServerRoute ServerManager::getRoute(string& url, const ServerTraits& conf)
+{
+    // Iterator to find the route
+    std::map<ft::string, ServerRoute>::const_iterator route_it;
+    
+    // Try to find the route for the given URL
+    route_it = conf.routes.find(url);
+    
+    // If no route is found, keep stripping the URL until a match is found or the URL is empty
+    while (route_it == conf.routes.end() && !url.empty())
+    {
+        url = getDir(url);  // Remove the last directory or file from the URL
+        route_it = conf.routes.find(url);  // Try to find the route again
+    }
+    
+    // If the URL is empty and no route is found, try to find the root route
+    if (route_it == conf.routes.end() && url.empty())
+    {
+        url = "/";
+        route_it = conf.routes.find(url);
+        
+        // If no root route is found, throw an error
+        if (route_it == conf.routes.end())
+            throw ErrorPage(conf, "500");
+    }
+    
+    // Return the found route
+    return route_it->second;
+}
+const	std::string	getErrPage(const std::string& code, const std::string& mssg)
+{
+	// if (conf.error_pages.find(code) != conf.error_pages.end())
+	// 	return (conf.error_pages.find(code)->second);
+
+	std::string	html = "<!DOCTYPE html>"
+						"<html lang=\"en\">"
+						"<head>"
+						"	<meta charset=\"UTF-8\">"
+						"	<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+						"	<title>" + code + " " + mssg + "</title>"
+						""
+						"	<style>"
+						"		h1 {"
+						"			text-align: center;"
+						"			margin-top: 40px;"
+						"			color: red;"
+						"		}"
+						"		h3 {"
+						"			text-align: center;"
+						"		}"
+						""
+						"	</style>"
+						"</head>"
+						"<body>"
+						"	<h1>" + code + " " + mssg + "</h1>"
+						"	<hr>"
+						"	<h3>webserv server</h3>"
+						"</body>"
+						"</html>";
+
+	return (html);
+}
+static void setErrPage(Response &res, const Request &req, const std::string& code, const std::string &mssg, const ServerTraits& conf)
+{
+    res.setResponseHeader(code, mssg);
+    if(conf.error_pages.find(code) != conf.error_pages.end())
+    {
+        res.setErrBody(conf.error_pages.find(code)->second, req);
+    }
+    else
+    {
+        res.setErrBody(getErrPage(code,mssg), req);
+    }    
+}
+
 void ServerManager::ProcessResponse(Request &request)
 {
     std::string host = request.getHost();
-
+    const ft::string& urlx = request.getReqUrl();
+	string url = urlx;
     if (host.empty()) 
         throw std::runtime_error("400"); 
     std::vector<Server>::iterator serv_it = findServer(
 		servers.begin(), servers.end(), host);
+    
+	const ServerTraits& conf = (*serv_it).getConf();
+	normalizeUrl(url);
+	ServerRoute route = getRoute(url, conf);
+	// checkClientBodySize(request, conf);
+	// string path = constructFullPath(route, url);
+
+	// throwIfnotAllowed(url, conf, request);
+
+	// if (redirect(route, res))
+	// 	return ;
+
+	// handleRequestType(request, res, path, route, conf);
 }
-std::string ServerManager::ManageRequest(const std::string& buffer)
+void ServerManager::normalizeUrl(string& url)
 {
-    std::string Response;
+	if (url.back() == '/' && url.size() > 1)
+		url.resize(url.size() - 1);
+}
+void setDefaultErrPage(Response &res, const Request &req, const std::string& code, const std::string &mssg)
+{
+    res.setResponseHeader(code, mssg);
+    res.setErrBody(getErrPage(code,mssg), req);
+}
+Response ServerManager::ManageRequest(const std::string& buffer)
+{
+    Response response;
+    Request request(buffer);
     std::string arr[] = {"400", "403", "404", "405", "500", "504"};
     std::string msgArr[] = {"Bad Request", "Forbidden", "Not Found", "Method Not Allowed",
         "Internal Server Error", "Gateway Timeout"};
 
     try
     {
-
-        Request request(buffer);
-        
         ProcessResponse(request);
+    }
+    catch(const ErrorPage& e)
+    {
+        setErrPage(response, request, e.what(), msgArr[(std::find(arr, arr + 6, e.what()) - arr)], e.getConf());
+    }  
+    catch (const std::runtime_error& e)
+    {
+       setDefaultErrPage(response, request, e.what(),msgArr[(std::find(arr, arr + 6, e.what()) - arr)]);
     }
     catch (const std::exception& e)
     {
-        std::string what = e.what();
-        Response = generateErrorResponse(what, msgArr[(std::find(arr, arr + 6, what) - arr)]);
+        setDefaultErrPage(response, request, "500", "Internal Server Error");
     }
-    return Response;
+    return response;
 }
 
 // Graceful shutdown handler

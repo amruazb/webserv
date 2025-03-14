@@ -1,5 +1,6 @@
 #include "Server.hpp"
 
+
 Server::Server(const ServerTraits& cnf) : conf(cnf)
 {
     std::memset(&address,0,sizeof(address));
@@ -60,6 +61,18 @@ Server& Server::operator = (const Server& src)
 	// this->conf = src.conf;
 	return *this;
 }
+Client Server::acceptNewClient()
+{
+    struct sockaddr_in clientAddress;
+    socklen_t clientAddrlen = sizeof(clientAddress);
+    int clientFd = accept(serverFd, (struct sockaddr *)&clientAddress, &clientAddrlen);
+
+    if (clientFd < 0)
+        throw std::runtime_error("Accept Error");
+
+    return Client(clientFd); // Create and return Client object
+}
+
 
 int Server::getServerFd() const { return serverFd; }
 

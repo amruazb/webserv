@@ -6,24 +6,33 @@ bool isExit = false;
 //          Discuss how address and ip address (obtained from server.config)are stored
 //          needs to change the server constructor accordingly
 
+/**
+ * Constructs a ServerManager with the given server configurations.
+ *
+ * @param cnf A vector of ServerTraits objects, representing the server configurations.
+ */
 ServerManager::ServerManager(const std::vector<ServerTraits>& cnf)
 {
     try {
-        for (size_t i = 0; i < cnf.size(); ++i) 
-        {
-            servers.push_back(Server(cnf[i])); // Create servers
+        // Create servers and initialize their sockets
+        for (size_t i = 0; i < cnf.size(); ++i) {
+            // Create a new server with the given configuration
+            servers.push_back(Server(cnf[i]));
 
-            // Add server sockets to poll list
-            struct pollfd pfd;
-            pfd.fd = servers.back().getServerFd();
-            pfd.events = POLLIN;
-            pfd.revents = 0;
+            // Initialize the server socket for polling
+            struct pollfd socketConfig;
+            socketConfig.fd = servers.back().getServerFd();
+            socketConfig.events = POLLIN;
+            socketConfig.revents = 0;
 
-            sockets.push_back(pfd);  // Now push the initialized struct into the vector
+            // Add the socket to the poll list
+            sockets.push_back(socketConfig);
 
+            // Log a success message
             std::cout << "✅ Server is listening on port " << cnf[i].listen_port << std::endl;
         }
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
+        // Log an error message and re-throw the exception
         std::cerr << "❌ Error: " << e.what() << std::endl;
         throw;
     }
@@ -48,78 +57,109 @@ ServerManager::~ServerManager()
         close(sockets[i].fd);
     }
 }
+/**
+ * ServerManager Run Method
+ *
+ * This method is the main loop of the ServerManager class, responsible for handling
+ * incoming client connections, reading data from clients, and sending responses back
+ * to clients.
+ */
 void ServerManager::run()
 {
-    signal(SIGPIPE, SIG_IGN);
-    signal(SIGINT, handle_exit);
+    // Signal Handling
+    signal(SIGPIPE, SIG_IGN);  // Ignore SIGPIPE signals
+    signal(SIGINT, handle_exit);  // Handle SIGINT signals using the handle_exit function
 
-    while(!isExit)
+    // Main Loop
+    while (!isExit)
     {
-        int eventCount = poll(sockets.data(), sockets.size(), -1);
-        if (eventCount < 0) 
-            throw std::runtime_error("Poll Error");
-        for (size_t i = 0; i < sockets.size(); ++i) 
+        try
         {
-            struct pollfd &pfd = sockets[i];
-            // Accept new client connections
-            if (pfd.revents & POLLIN && i < servers.size()) 
+            // Polling
+            int eventCount = poll(sockets.data(), sockets.size(), -1);
+            if (eventCount < 0)
+                throw std::runtime_error("Poll Error");
+            // Event Handling
+            for (size_t i = 0; i < sockets.size(); ++i)
             {
-                int clientFd = accept(pfd.fd, servers[i].getAddress(),servers[i].getAddrlen());
-                if (clientFd < 0) 
-                    throw std::runtime_error("Accept Error");
-                // Add new client to poll list
-                struct pollfd new_pfd;
-                new_pfd.fd = clientFd;
-                new_pfd.events = POLLIN | POLLOUT;
-                new_pfd.revents = 0;
-                sockets.push_back(new_pfd);
-                clientBuffers[clientFd] = "";
-                isReqComplete[clientFd] = false;
-            }
-            //Read data from clients
-            else if (pfd.revents & POLLIN && i >= servers.size())
-            {
-                char buffer[BUFFER_SIZE] = {0};
-                int bytesRead = recv(pfd.fd, buffer, BUFFER_SIZE - 1, 0);
-                
-                if (bytesRead <= 0) {
-                    // Client disconnected
-                    std::cout << "❌ Client disconnected: FD " << pfd.fd << std::endl;
-                    close(pfd.fd);
-                    sockets.erase(sockets.begin() + i);
-                    clientBuffers.erase(pfd.fd);
-                    --i;
-                    continue;
+                struct pollfd& pfd = sockets[i];
+                // New Client Connections
+                if (pfd.revents & POLLIN && i < servers.size())
+                {
+                    std::cout << "inside accepting client loop" << std::endl;
+                    // Accepting New Connections
+                    Client client = servers[i].acceptNewClient();
+                    // Add New Client to Poll List
+                    struct pollfd new_pfd;
+                    client.addPoll(new_pfd);
+                    sockets.push_back(new_pfd);
+                    std::cout << "Added client FD " << new_pfd.fd << " to poll list" << std::endl;
+                    clients.push_back(client);
+                    printClients(clients);
+
+                    // Initialize Client Buffers
+                    clientBuffers[client.getFd()] = "";
+                    isReqComplete[client.getFd()] = false;
                 }
-                
-                clientBuffers[pfd.fd] += std::string(buffer, bytesRead);
-                    //check whether the HTTP request is complete or partial by analysing the client data
-                isReqComplete[pfd.fd] = partialRequest(clientBuffers[pfd.fd]);
-                // std::cout << "📩 Received from client FD " << pfd.fd << ": " << buffer << std::endl;
+                // Reading Data from Clients
+                else if (pfd.revents & POLLIN && i >= servers.size())
+                {
+                    try
+                    {    
+                        getClientByFd(clients, pfd.fd)->readData(clientBuffers[pfd.fd]);
+                        std::cout << clientBuffers[pfd.fd] << std::endl;
+                        // Check for Request Completion
+                        isReqComplete[pfd.fd] = partialRequest(clientBuffers[pfd.fd]);
+                        std::cout << isReqComplete[pfd.fd] << std::endl;
+                    }
+                    catch (const std::exception& e)
+                    {
+                        // Handle Read Error
+                        std::cerr << "Error reading from client:/client disconnected " << e.what() << std::endl;
+                        close(pfd.fd);
+                        clientBuffers[pfd.fd].clear();
+                        sockets.erase(sockets.begin() + i);
+                        // clients.erase(clients.begin() + i);
+                        clientBuffers.erase(pfd.fd);
+                        --i;
+                    }
+                }
+                // Sending Responses to Clients
+                else if (pfd.revents & POLLOUT && i >= servers.size() && isReqComplete[pfd.fd] == true)
+                {
+                    try
+                    {
+                        // Send Response
+                        Response response = ManageRequest(clientBuffers[pfd.fd]);
+                        send(pfd.fd, response.getRes().c_str(), response.getRes().length(), 0);
+
+                        // Close Socket
+                        close(pfd.fd);
+                        sockets.erase(sockets.begin() + i);
+                        // removeClientByFd(clients, pfd.fd);
+                        clientBuffers.erase(pfd.fd);
+                        --i;
+                    }
+                    catch (const std::exception& e)
+                    {
+                        // Handle Send Error
+                        std::cerr << "Error sending response to client: " << e.what() << std::endl;
+                        close(pfd.fd);
+                        sockets.erase(sockets.begin() + i);
+                        removeClientByFd(clients, pfd.fd);
+                        clientBuffers.erase(pfd.fd);
+                        --i;
+                    }
+                }
             }
-                // Send response to clients
-                // 🚀 FIXME: 
-                //      1.Ask teammate about handling HTTP request parsing,
-                //      2.Need confirmation on expected format of response
-                //      3.Implementation of error Handling and custom error Pages
-
-
-            else if (pfd.revents & POLLOUT && i >= servers.size()&& isReqComplete[pfd.fd] == true) 
-            {
-                std::cout << "Current request buffer for FD " << pfd.fd << ": " << clientBuffers[pfd.fd] << std::endl;
-                Response response = ManageRequest(clientBuffers[pfd.fd]);
-                send(pfd.fd, response.getRes().c_str(), response.getRes().length(), 0);
-
-                close(pfd.fd);
-                sockets.erase(sockets.begin() + i);
-                clientBuffers.erase(pfd.fd);
-                --i;
-            }
-
-            }
+        }
+        catch (const std::exception& e)
+        {
+            // Handle Main Loop Error
+            std::cerr << "Error in main loop: " << e.what() << std::endl;
+        }
     }
 }
-
 /*
 * Find the server that matches the host and port
 * If the host is an IP address, match the address and port
@@ -143,41 +183,26 @@ static std::vector<Server>::iterator findServer(std::vector<Server>::iterator st
         setAddress(portStr, address, port);
     }
 
-    // for (it = start; it != end; ++it)
-	// {
-    //     std::cout << "listen address" << (*it).getConf().listen_address << std::endl;
-    //     std::cout << "listen port" << (*it).getConf().listen_port << std::endl;
-    //     std::cout << "ADRESS" << address << std::endl;
-    //     if ((((*it).getConf().listen_address == address) || ((*it).getConf().listen_address == htonl(INADDR_ANY))) && (*it).getConf().listen_port == port)
-    //         return (it);
-    //     bool foundAddStr = std::find((*it).getConf().server_name.begin(),
-    //                                  (*it).getConf().server_name.end(), addStr) != (*it).getConf().server_name.end();
-    //     bool foundUnderscore = std::find((*it).getConf().server_name.begin(),
-    //                                      (*it).getConf().server_name.end(), "_") != (*it).getConf().server_name.end();
-    //     bool nameMatch = foundAddStr || foundUnderscore;
-    //     bool portMatch = (*it).getConf().listen_port == port;
-
-    //     if (nameMatch && portMatch)
-    //     {
-    //         std::cout << "MATCHING" << std::endl;
-    //         return (it);
-    //     }
-	// }
-    // std::cout << "NO MATCHING" << std::endl;
-	// return (it);
-    	for (it = start; it != end; ++it)
+    for (it = start; it != end; ++it)
 	{
-		if ((((*it).getConf().listen_address == address)
-			|| ((*it).getConf().listen_address == htonl(INADDR_ANY)))
-			&& (*it).getConf().listen_port == port)
-			return (it);
-		if (((std::find((*it).getConf().server_name.begin(),
-			(*it).getConf().server_name.end(), addStr) != (*it).getConf().server_name.end())
-			|| (std::find((*it).getConf().server_name.begin(),
-			(*it).getConf().server_name.end(), "_") != (*it).getConf().server_name.end()))
-			&& (*it).getConf().listen_port == port)
-			return (it);
+        std::cout << "Checking Server: Address=" << (*it).getConf().listen_address
+          << ", Port=" << (*it).getConf().listen_port << std::endl;
+        if ((((*it).getConf().listen_address == address) || ((*it).getConf().listen_address == htonl(INADDR_ANY))) && (*it).getConf().listen_port == port)
+            return (it);
+        bool foundAddStr = std::find((*it).getConf().server_name.begin(),
+                                     (*it).getConf().server_name.end(), addStr) != (*it).getConf().server_name.end();
+        bool foundUnderscore = std::find((*it).getConf().server_name.begin(),
+                                         (*it).getConf().server_name.end(), "_") != (*it).getConf().server_name.end();
+        bool nameMatch = foundAddStr || foundUnderscore;
+        bool portMatch = (*it).getConf().listen_port == port;
+
+        if (nameMatch && portMatch)
+        {
+            std::cout << "MATCHING" << std::endl;
+            return (it);
+        }
 	}
+    std::cout << "NO MATCHING" << std::endl;
 	return (it);
 }
 
@@ -344,7 +369,8 @@ void handle_exit(int sig)
 }
 bool	ServerManager::partialRequest(std::string &buff)
 {
-     // Check if the buffer contains the complete headers
+    std::cout << buff << std::endl;
+    // Check if the buffer contains the complete headers
     if (buff.find("\r\n\r\n") == std::string::npos)
 		return (false);
     // Return false if the buffer is empty (no data)

@@ -23,6 +23,7 @@
 #include "Server.hpp"
 #include <algorithm>
 #include <exception>
+#include "Client.hpp"
 #include "Server.hpp"
 #include "Response.hpp"
 

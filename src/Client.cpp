@@ -1,27 +1,81 @@
-#include <iostream>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+#include "Client.hpp"
 
-int main() {
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
-        std::cerr << "Socket creation failed\n";
-        return 1;
+
+Client::Client(int fd) : fd_(fd) 
+{
+
+}
+
+
+
+void Client::sendResponse() 
+{
+    // Send response to client
+    std::string response = "Hello, client!";
+    send(fd_, response.c_str(), response.length(), 0);
+}
+void Client::addPoll(struct pollfd & pfd)
+{
+    pfd.fd = fd_;
+    pfd.events = POLLIN | POLLOUT;
+    pfd.revents = 0;
+}
+int Client::getFd()
+{
+    return fd_;
+}
+
+void Client::close_client() 
+{
+    // Close client connection
+    close(fd_);
+}
+Client::~Client() 
+{
+   
+}
+Client* getClientByFd(std::vector<Client>& clients, int fd) {
+    for (std::vector<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
+        if (it->getFd() == fd) {
+            // std::cout << "found the client"<<it->getFd() << std::endl;
+            return &(*it);
+        }
     }
+    std::cout << "Not found the client" << std::endl;
+    return NULL;
+}
 
-    struct sockaddr_in server_addr;
-std::memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(9090);
-    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-
-    if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) == 0) {
-        std::cout << "✅connected to port 8080\n";
-    } else {
-        std::cerr << "❌ Server is NOT listening\n";
+int Client::readData(string &buff)
+{
+    char buffer[BUFFER_SIZE] ={0};
+    int bytes = recv(fd_, buffer, BUFFER_SIZE, 0);
+    if (bytes < 0)
+    {
+        std::cerr << "Error reading from client: " << strerror(errno) << std::endl;
+        throw std::runtime_error("Read Error");
     }
+    else if (bytes == 0)
+    {
+        throw std::runtime_error("Client disconnected");   
+        return(0);
+    }
+    buff.append(buffer, bytes);
+    return (1);
+}
+void removeClientByFd(std::vector<Client> &clients, int fd) {
+    for (std::vector<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
+        if (it->getFd() == fd) {
+            std::cout << "Removing client with fd: " << fd << std::endl;
+            clients.erase(it); // Remove the client
+            return; // Stop after erasing to prevent iterator invalidation
+        }
+    }
+}
 
-    close(sock);
-    return 0;
+void printClients(std::vector<Client> &clients) {
+    std::cout << "Current clients: ";
+    for (size_t i = 0; i < clients.size(); ++i) {
+        std::cout << clients[i].getFd() << " ";
+    }
+    std::cout << std::endl;
 }

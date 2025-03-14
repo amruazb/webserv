@@ -130,6 +130,7 @@ void ConfigParser::fillServerValue(ServerTraits& server, string& name, std::vect
 		if (segments.size() > 1)
 			throw std::runtime_error("Parse Error: 'listen' should have 1 value");
 		setAddress(segments.front(), server.listen_address, server.listen_port);
+		std::cout << "listening port" << server.listen_port<<std::endl;
 	}
 	else if (name == "root")
 	{
@@ -252,8 +253,9 @@ void setAddress(ft::string& confAdrss, in_addr_t &address, in_port_t& port)
     {
 		address = htonl(INADDR_ANY);
         port = ft::from_string<in_port_t>(vec.at(0));
-        if (port <= 0)
-            throw std::runtime_error("400"); // Bad Address: Invalid format
+		std::cout << "port is" << port << std::endl;
+		if (port <= 0)
+			throw std::runtime_error("400"); // Bad Address: Invalid format
         port = htons(port);
         return;
     }

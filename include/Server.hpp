@@ -1,7 +1,7 @@
 #pragma once
 
 #include "webserv.hpp"
-
+#include "Client.hpp"
 class Server
 {
     private:
@@ -21,6 +21,5 @@ class Server
         struct sockaddr *getAddress() const;
         socklen_t *getAddrlen() const;
         const ServerTraits& getConf() const;
+        Client acceptNewClient();
 };
-        
-

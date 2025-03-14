@@ -4,12 +4,14 @@
 class Server;
 class Request;
 class Response;
+class Client;
 class ServerManager
 {
     private:
         std::vector<Server> servers;
+        std::vector<Client> clients;
         std::vector<struct pollfd> sockets;
-        std::map<int, std::string> clientBuffers; // To store client data
+        std::map<int, string> clientBuffers; // To store client data
         std::map<int, bool> isReqComplete;
        
     public:

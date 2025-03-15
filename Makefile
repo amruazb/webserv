@@ -6,7 +6,7 @@
 #    By: shmuhamm <shmuhamm@student.42abudhabi.a    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/02/27 11:57:01 by shmuhamm          #+#    #+#              #
-#    Updated: 2025/03/13 14:18:59 by shmuhamm         ###   ########.fr        #
+#    Updated: 2025/03/15 14:26:09 by shmuhamm         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,7 +17,7 @@ SRCS_FOLDER = ./src
 INCLUDE_FOLDER = -I./include -I./lib/string
 
 FILES_NAMES = main.cpp Server.cpp ServerManager.cpp Request.cpp ConfigParser.cpp Response.cpp\
-				Client.cpp
+				Client.cpp ServerTraits.cpp
 
 FILES = lib/string/ft_string.cpp $(addprefix $(SRCS_FOLDER)/,$(FILES_NAMES))
 

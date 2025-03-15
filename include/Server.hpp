@@ -9,8 +9,9 @@ class Server
         int serverFd;
         int addrlen;
         ServerTraits conf;
+        // std :: list<int> clients;
         // There shouldn't be a default constructor
-	    Server();
+        Server();
     public:
         Server(const ServerTraits& cnf);
         ~Server();

@@ -1,26 +1,6 @@
 #include "ConfigParser.hpp"
 
-ServerTraits::ServerTraits()
-{
-	routes["/"].root = root;
-	client_max_body_size = 1024;
-	root = "/var/www/html";
-	cgi_extensions.push_back("");
-	server_name.push_back("_");
-}
-ServerRoute::ServerRoute()
-{
-    limit_except.reserve(5);
-	limit_except.push_back("GET");
-	limit_except.push_back("HEAD");
-	limit_except.push_back("PUT");
-	limit_except.push_back("POST");
-	limit_except.push_back("DELETE");
 
-	index.push_back("index");
-	index.push_back("index.html");
-
-}
 
 ConfigParser::ConfigParser() {}
 ConfigParser::ConfigParser(ft::string& input) 
@@ -127,6 +107,7 @@ void ConfigParser::fillServerValue(ServerTraits& server, string& name, std::vect
 {
 	if (name == "listen")
 	{
+		std::cout << "i am in listen " << std::endl;
 		if (segments.size() > 1)
 			throw std::runtime_error("Parse Error: 'listen' should have 1 value");
 		setAddress(segments.front(), server.listen_address, server.listen_port);

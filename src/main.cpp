@@ -5,19 +5,15 @@ int main(int ac,char** av,char ** envp)
     
 (void)ac;
 (void)envp;
+(void)av;
 try
 {
-        ft::string file = av[1] ;
+        ft::string file = "conf.ini";
+
         ConfigParser parser(file);
         std::vector<ServerTraits> conf = parser.parseConfig();
 
         // Verify server settings
-        std::cout << "Server root: " << parser.getServerTraits().root << std::endl;
-        std::cout << "Listen address: " << parser.getServerTraits().listen_address << std::endl;
-        std::cout << "Listen port: " << parser.getServerTraits().listen_port << std::endl;
-        std::cout << "Server name: " << parser.getServerTraits().server_name[0] << std::endl;
-        std::cout << "Client max body size: " << parser.getServerTraits().client_max_body_size << std::endl;
-
 
         ServerManager serverManager(conf);
         serverManager.run();

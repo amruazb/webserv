@@ -48,7 +48,7 @@ Server::Server(const Server& src)
 	if (this == &src)
 		return ;
 	*this = src;
-	// conf = src.conf;
+	conf = src.conf;
 }
 
 Server& Server::operator = (const Server& src)
@@ -56,9 +56,9 @@ Server& Server::operator = (const Server& src)
 	if (this == &src)
 		return *this;
 	this->address = src.address;
-	// this->addrlen = src.addrlen;
+	this->addrlen = src.addrlen;
 	this->serverFd = src.serverFd;
-	// this->conf = src.conf;
+	this->conf = src.conf;
 	return *this;
 }
 Client Server::acceptNewClient()

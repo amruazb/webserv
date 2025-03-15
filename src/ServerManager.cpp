@@ -18,6 +18,11 @@ ServerManager::ServerManager(const std::vector<ServerTraits>& cnf)
         for (size_t i = 0; i < cnf.size(); ++i) {
             // Create a new server with the given configuration
             servers.push_back(Server(cnf[i]));
+            std::vector<Server>::iterator it;
+        for (it = servers.begin(); it != servers.end();it++)
+        {
+            std::cout << (*it).getConf().listen_port;
+        }
 
             // Initialize the server socket for polling
             struct pollfd socketConfig;
@@ -185,6 +190,8 @@ static std::vector<Server>::iterator findServer(std::vector<Server>::iterator st
 
     for (it = start; it != end; ++it)
 	{
+        	std::cout << "Checking HOST: Address=" << address
+          << ", Port=" << port << std::endl;
         std::cout << "Checking Server: Address=" << (*it).getConf().listen_address
           << ", Port=" << (*it).getConf().listen_port << std::endl;
         if ((((*it).getConf().listen_address == address) || ((*it).getConf().listen_address == htonl(INADDR_ANY))) && (*it).getConf().listen_port == port)
@@ -297,13 +304,12 @@ void ServerManager::ProcessResponse(Request &request)
 	string url = urlx;
     if (host.empty())
         throw std::runtime_error("400");
-   
-    std::vector<Server>::iterator serv_it = findServer(
-        servers.begin(), servers.end(), host);
-    if (serv_it == servers.end())
-    {
-        std::cout << "Server not found" << std::endl;
-        throw std::runtime_error("404");
+            std::vector<Server>::iterator serv_it = findServer(
+                servers.begin(), servers.end(), host);
+        if (serv_it == servers.end())
+        {
+            std::cout << "Server not found" << std::endl;
+            throw std::runtime_error("404");
     }
     //Get the Server Configuration
 	const ServerTraits& conf = (*serv_it).getConf();

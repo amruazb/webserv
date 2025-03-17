@@ -30,4 +30,5 @@ struct ServerTraits
 	size_t client_max_body_size;
 	std::map<string, string> error_pages;
 	std::map<string, ServerRoute> routes;
+
 };

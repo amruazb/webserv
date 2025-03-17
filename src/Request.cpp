@@ -43,6 +43,62 @@ std::string Request::getHost() const
     }
     return "";
 }
+std::string	Request::strToUpper(std::string str)
+{
+    for(size_t i = 0; i < str.length(); i++) {
+        str[i] = toupper(str[i]);
+    }
+	return (str);
+}
+
+std::string Request::replaceChar(std::string str)
+{
+	for (size_t pos = str.find('-'); pos != std::string::npos; pos = str.find('-'))
+	{
+		str.replace(pos, 1, "_");
+	}
+	return(str);
+}
+
+std::map<std::string, std::string>	Request::parseUnderScore()
+{
+	std::map<std::string, std::string> mapCopy = _request;
+	std::map<std::string, std::string> mapC;
+	std::map<std::string, std::string>::iterator it;
+	for (it = mapCopy.begin(); it != mapCopy.end(); ++it)
+	{
+		std::string key = replaceChar(it->first);
+		key = replaceotherChar(it->first);
+		key = strToUpper(key);
+        key = "HTTP_" + key;
+		key = ft::string(key).replace_all("-", "_");
+		mapC[key] = it->second;
+	}
+	return (mapC);
+}
+std::map<std::string, std::string> Request::modifyEnv(std::map<std::string, std::string> env)
+{
+	std::map<std::string, std::string> updatedReq = parseUnderScore();
+	std::map<std::string, std::string>::iterator it1;
+	for (it1 = updatedReq.begin(); it1 != updatedReq.end(); ++it1)
+	{
+
+		env[it1->first] = it1->second;
+	}
+	for (it1 = _queryMap.begin(); it1 != _queryMap.end(); ++it1)
+	{
+		env[it1->first] = it1->second;
+	}
+	return env;
+}
+std::string Request::replaceotherChar(std::string str)
+{
+	for (size_t pos = str.find(':'); pos != std::string::npos; pos = str.find(':'))
+	{
+		str.replace(pos, 1, "");
+	}
+	return(str);
+}
 e_requestType Request::getType() const
 {
     return _type;

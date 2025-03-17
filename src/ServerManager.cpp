@@ -15,14 +15,12 @@ ServerManager::ServerManager(const std::vector<ServerTraits>& cnf)
 {
     try {
         // Create servers and initialize their sockets
-        for (size_t i = 0; i < cnf.size(); ++i) {
+        for (size_t i = 0; i < cnf.size(); ++i) 
+        {
             // Create a new server with the given configuration
             servers.push_back(Server(cnf[i]));
+            std::cout <<"Debug from Server Manager construc"<<cnf[i].root<<std::endl;
             std::vector<Server>::iterator it;
-        for (it = servers.begin(); it != servers.end();it++)
-        {
-            std::cout << (*it).getConf().listen_port;
-        }
 
             // Initialize the server socket for polling
             struct pollfd socketConfig;
@@ -69,8 +67,46 @@ ServerManager::~ServerManager()
  * incoming client connections, reading data from clients, and sending responses back
  * to clients.
  */
-void ServerManager::run()
+std::string	ServerManager::strToUpper(std::string str)
 {
+    for(size_t i = 0; i < str.length(); i++) {
+        str[i] = toupper(str[i]);
+    }
+	return (str);
+}
+void	ServerManager::parseEnv(char **rawEnv)
+{
+	std::string str1;
+	std::string envStr;
+	bool	flag = false;
+
+	for (size_t i = 0; rawEnv[i]; i++)
+	{
+		envStr += rawEnv[i];
+		envStr += "\n";
+	}
+	std::stringstream str(envStr);
+	while (getline(str, str1, '\n'))
+	{
+		std::stringstream line(str1);
+		std::string key, value;
+		getline(line, key, '=');
+		getline(line, value);
+		std::map<std::string, std::string>::iterator it;
+		for (it = envMap.begin(); it != envMap.end(); ++it)
+		{
+			key = strToUpper(key);
+			if (key == it->first)
+				flag = true;
+		}
+		if (flag)
+			continue;
+		envMap[key] = value;
+	}
+}
+void ServerManager::run(char **envp)
+{
+    parseEnv(envp);
     // Signal Handling
     signal(SIGPIPE, SIG_IGN);  // Ignore SIGPIPE signals
     signal(SIGINT, handle_exit);  // Handle SIGINT signals using the handle_exit function
@@ -91,14 +127,13 @@ void ServerManager::run()
                 // New Client Connections
                 if (pfd.revents & POLLIN && i < servers.size())
                 {
-                    std::cout << "inside accepting client loop" << std::endl;
+                    
                     // Accepting New Connections
                     Client client = servers[i].acceptNewClient();
                     // Add New Client to Poll List
                     struct pollfd new_pfd;
                     client.addPoll(new_pfd);
                     sockets.push_back(new_pfd);
-                    std::cout << "Added client FD " << new_pfd.fd << " to poll list" << std::endl;
                     clients.push_back(client);
                     printClients(clients);
 
@@ -244,10 +279,10 @@ ServerRoute ServerManager::getRoute(string& url, const ServerTraits& conf)
         route_it = conf.routes.find(url);
         
         // If no root route is found, throw an error
-        if (route_it == conf.routes.end())
-            throw ErrorPage(conf, "500");
+        // if (route_it == conf.routes.end())
+        //     throw ErrorPage(conf, "500");
     }
-    
+    std::cout << "Route found: " << route_it->second.root << std::endl;
     // Return the found route
     return route_it->second;
 }
@@ -297,8 +332,9 @@ static void setErrPage(Response &res, const Request &req, const std::string& cod
        
 }
 
-void ServerManager::ProcessResponse(Request &request)
+void ServerManager::ProcessResponse(Request &request,Response &res)
 {
+    
     std::string host = request.getHost();
     const ft::string& urlx = request.getReqUrl();
 	string url = urlx;
@@ -310,23 +346,34 @@ void ServerManager::ProcessResponse(Request &request)
         {
             std::cout << "Server not found" << std::endl;
             throw std::runtime_error("404");
-    }
+        }
     //Get the Server Configuration
+    std::cout <<url <<std::endl;
 	const ServerTraits& conf = (*serv_it).getConf();
+    std::cout << "Drbu from :" <<conf.root <<std::endl;
     
-	normalizeUrl(url);
+	if (url.back() == '/' && url.size() > 1)
+		url.resize(url.size() - 1);
     string routeUrl = url;
-    ServerRoute route = getRoute(url, conf);
-    std::cout << route.root << std::endl;
-    // checkClientBodySize(request, conf);
-    // string path = constructFullPath(route, url);
+    ServerRoute route = getRoute(routeUrl, conf);
+    if(route.root.empty())
+        route.root = conf.root;
+    //if(conf.client_max_body_size<(request.getBody().size())+request.getReqUrl().size())
+        //throw std::runtime_error("413");
+    string path = route.root+"/"+url.substr(routeUrl.length());
+    std::cout << "root: " << route.root << std::endl;
+    if (path.back() == '/')
+        path.resize(path.size() - 1);
+        // throwIfnotAllowed(url, conf, request);
+    
+        // if (redirect(route, res))
+        // 	return ;
+    
+        // handleRequestType(request, res, path, route, conf);
+    std::cout << "Path: " << path << std::endl;
+    res.setResBody(path, request);
+    
 
-    // throwIfnotAllowed(url, conf, request);
-
-	// if (redirect(route, res))
-	// 	return ;
-
-	// handleRequestType(request, res, path, route, conf);
 }
 void ServerManager::normalizeUrl(string& url)
 {
@@ -348,7 +395,7 @@ Response ServerManager::ManageRequest(const std::string& buffer)
 
     try
     {
-        ProcessResponse(request);
+        ProcessResponse(request,response);
     }
     catch(const ErrorPage& e)
     {

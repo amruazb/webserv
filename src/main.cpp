@@ -16,7 +16,7 @@ try
         // Verify server settings
 
         ServerManager serverManager(conf);
-        serverManager.run();
+        serverManager.run(envp);
 }
 catch (const std::runtime_error& e)
 {

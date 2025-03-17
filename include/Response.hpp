@@ -24,6 +24,7 @@ class Response
         void setMssg(std::string mssg);
         void setResponseHeader(std::string code, std::string mssg);
         void setErrBody(std::string body, const Request &req);
+        void setResBody(std::string body, const Request &req);
         std::string getRes();
         
 };

@@ -107,7 +107,6 @@ void ConfigParser::fillServerValue(ServerTraits& server, string& name, std::vect
 {
 	if (name == "listen")
 	{
-		std::cout << "i am in listen " << std::endl;
 		if (segments.size() > 1)
 			throw std::runtime_error("Parse Error: 'listen' should have 1 value");
 		setAddress(segments.front(), server.listen_address, server.listen_port);

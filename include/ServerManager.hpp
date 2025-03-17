@@ -11,6 +11,7 @@ class ServerManager
         std::vector<Server> servers;
         std::vector<Client> clients;
         std::vector<struct pollfd> sockets;
+        std::map<std::string,std::string>envMap;
         std::map<int, string> clientBuffers; // To store client data
         std::map<int, bool> isReqComplete;
        
@@ -20,10 +21,12 @@ class ServerManager
         ServerManager(const ServerManager &src);
         ServerManager& operator=(const ServerManager &src);
 
-        void run();
+        void run(char **envp);
+        void parseEnv(char **rawEnv);
+        std::string	strToUpper(std::string str); 
         bool partialRequest(std::string	&buff);
         Response ManageRequest(const std::string& buffer);  
-        void ProcessResponse(Request& request); 
+        void ProcessResponse(Request& request,Response& res); 
         void normalizeUrl(string& url);   
         ServerRoute getRoute(string& url, const ServerTraits& conf);
 };

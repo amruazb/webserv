@@ -78,3 +78,17 @@ void Response::setErrBody(std::string body, const Request &req)
     header += "\r\n";
    
 }
+void Response::setResBody(std::string path, const Request &req)
+{
+    std::string body = ft::file_to_string(path);
+    res_body.clear();
+    res_body = body;
+    content_len = res_body.length();
+    if(req.getType() == HEAD)
+        res_body.clear();
+    header += "Content-Type: " + content_type + "\r\n";
+    header += "Content-Length: " + ft::to_string(content_len) + "; charset=utf-8""\r\n";
+    // res += "Connection: close\r\n";
+    header += "\r\n";
+}
+

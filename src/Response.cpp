@@ -10,6 +10,7 @@ Response::Response()
     res_body = "";
     res = "";
     setResponseHeader(code, mssg);
+    // parseMimes();
 }
 
 Response::Response(const Response &src)
@@ -41,7 +42,7 @@ void Response::setResponseHeader(std::string code, std::string mssg)
 void Response::setHeader()
 {
    header.clear();
-   header += "HTTP/1.1"+ code + " "+ mssg + "\r\n";
+   header += "HTTP/1.1 "+ code + " "+ mssg + "\r\n";
 
 }
 void Response::setCode(std::string code)
@@ -50,7 +51,11 @@ void Response::setCode(std::string code)
 }
 void Response::setMssg(std::string mssg)
 {
-    this->mssg = mssg;
+    mssg = mssg;
+}
+void Response::appendHeader(const std::string& str)
+{
+	header += str + "\r\n";
 }
 Response::~Response()
 {
@@ -70,7 +75,7 @@ void Response::setErrBody(std::string body, const Request &req)
     res_body.clear();
     res_body = body;
     content_len = res_body.length();
-    if(req.getType() == HEAD)
+    if(req.getReqType() == HEAD)
         res_body.clear();
     header += "Content-Type: " + content_type + "\r\n";
     header += "Content-Length: " + ft::to_string(content_len) + "; charset=utf-8""\r\n";
@@ -84,11 +89,31 @@ void Response::setResBody(std::string path, const Request &req)
     res_body.clear();
     res_body = body;
     content_len = res_body.length();
-    if(req.getType() == HEAD)
+    if(req.getReqType() == HEAD)
         res_body.clear();
     header += "Content-Type: " + content_type + "\r\n";
     header += "Content-Length: " + ft::to_string(content_len) + "; charset=utf-8""\r\n";
     // res += "Connection: close\r\n";
     header += "\r\n";
 }
-
+void	Response::parseMimes()
+{
+	std::ifstream	mimieFile("mimes.txt");
+	std::string		line;
+	
+	if (mimieFile.fail())
+	{
+		mimieFile.close();
+	}
+	getline(mimieFile, line);
+	while (!(mimieFile.eof()))
+	{
+		std::stringstream	str(line);
+		std::string			ext, type;
+		getline(str, ext, ' ');
+		getline(str, type);
+		this->mimes[ext] = type;
+		getline(mimieFile, line);
+	}
+	mimieFile.close();
+}

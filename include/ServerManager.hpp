@@ -29,19 +29,11 @@ class ServerManager
         void ProcessResponse(Request& request,Response& res); 
         void normalizeUrl(string& url);   
         ServerRoute getRoute(string& url, const ServerTraits& conf);
+        void throwIfnotAllowed(const string& url, const ServerTraits& conf,
+            const Request& request);
+        bool   redirect(const ServerRoute& route, Response& res);
 };
 void handle_exit(int sig);
-std::string generateErrorResponse(const std::string &statusCode, const std::string &statusMessage);
 
-class ErrorPage : public std::exception
-{
-    private:
-        const ServerTraits& conf;
-        const std::string msg;
 
-    public:
-        ErrorPage(const ServerTraits& conf,std::string msg) : conf(conf),msg(msg) {}
-        virtual const char* what() const throw() { return msg.c_str(); }
-        const ServerTraits& getConf() const { return conf; }
-        virtual ~ErrorPage() throw() {}
-};
+

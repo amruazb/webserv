@@ -9,6 +9,23 @@ Request::~Request()
 {
 
 }
+e_requestType Request::setReqType(const std::string& method) const
+{
+    if (method == "GET")
+        return GET;
+    else if (method == "POST")
+        return POST;
+    else if (method == "PUT")
+        return PUT;
+    else if (method == "DELETE")
+        return DELETE;
+    else if (method == "HEAD")
+        return HEAD;
+    else if (method == "OPTIONS")
+        return OPTIONS;
+    else
+        return UNKNOWN; // For unsupported or unknown methods
+}
 void Request::parseRequest(const std::string& rawRequest)
 {
     std::istringstream stream(rawRequest);
@@ -19,6 +36,9 @@ void Request::parseRequest(const std::string& rawRequest)
             std::string method, url, version;
             lineStream >> method >> url >> version;
             _reqUrl = url;
+
+            // Determine and store the request type
+        _type = setReqType(method);
     }
     // Parse headers
         while (std::getline(stream, line) && line != "\r") 
@@ -99,7 +119,7 @@ std::string Request::replaceotherChar(std::string str)
 	}
 	return(str);
 }
-e_requestType Request::getType() const
+e_requestType Request::getReqType() const
 {
     return _type;
 }

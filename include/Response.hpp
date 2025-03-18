@@ -1,5 +1,6 @@
 #pragma once
 #include "webserv.hpp"
+#include "error.hpp"
 
 class Response
 {
@@ -11,7 +12,7 @@ class Response
         int         content_len;
         std::string res_body;
         std::string res;
-
+        std::map<std::string, std::string>	mimes;
 
     public:
         Response();
@@ -25,6 +26,8 @@ class Response
         void setResponseHeader(std::string code, std::string mssg);
         void setErrBody(std::string body, const Request &req);
         void setResBody(std::string body, const Request &req);
+        void parseMimes();
+        void appendHeader(const std::string& str);
         std::string getRes();
         
 };

@@ -11,16 +11,17 @@ enum e_requestType
     HEAD,
     OPTIONS,
     TRACE,
-    CONNECT
+    CONNECT,
+    UNKNOWN
 };
 class Request
 {
 private:
     std::string _reqUrl;
-    std::map<std::string, std::string> _headers;
-    e_requestType _type;
-    std::map<std::string, std::string>	_request;
-	std::map<std::string, std::string>	_queryMap;
+    std::map<std::string, std::string>      _headers;
+    std::map<std::string, std::string>	    _request;
+	std::map<std::string, std::string>	    _queryMap;
+    e_requestType                            _type;
 
 public:
     Request(const std::string &raRequest);
@@ -29,12 +30,14 @@ public:
     std::map<std::string, std::string>	modifyEnv(std::map<std::string, std::string> env);
     std::map<std::string, std::string>	parseUnderScore();
     void parseRequest(const std::string &rawRequest);
+    e_requestType						getReqType() const;
+
     const std::string &getReqUrl() const;
     std::string getHost() const;
-    e_requestType getType() const;
     std::string                         replaceotherChar(std::string str);
     std::string							replaceChar(std::string str);
 	std::string							strToUpper(std::string str);
+    e_requestType setReqType(const std::string& method) const;
 
     
 };

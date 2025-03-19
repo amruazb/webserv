@@ -8,10 +8,12 @@
 #include <unistd.h>
 #include <poll.h>
 #include <vector>
+#include <dirent.h>
 #include <map>
 #include <string>
 #include <csignal>
 #include <sstream>
+#include <sys/stat.h>
 #include <stdexcept>
 #include "Request.hpp"
 #include <fstream>

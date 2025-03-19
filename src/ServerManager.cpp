@@ -376,46 +376,89 @@ void ServerManager::ProcessResponse(Request &request,Response &res)
     //Get the Server Configuration
 	const ServerTraits& conf = (*serv_it).getConf(); 
 	normalizeUrl(url);
-
+        std::cout << "URL: " << url << std::endl;
     // Get the route for the URL
     string routeUrl = url;
     ServerRoute route = getRoute(routeUrl, conf);
-
-    // Use the server root if the route root is empty
     if(route.root.empty())
-        route.root = conf.root;
+        route.root = conf.root;//default root
     // if(conf.client_max_body_size<(request.getBody().size())+request.getReqUrl().size())
         //  throw HttpException("413","Payload Too Large");
     
-     // Construct the file path   
-    std::string path = route.root;
-    if (!path.empty() && path.back() != '/')
-        path += "/";
-    path += url.substr(routeUrl.length());
-    if (path.back() == '/')
+    // Construct the full path
+    std::string path = route.root + "/" + url.substr(routeUrl.length());
+    if (!path.empty() && path[path.size() - 1] == '/')
         path.resize(path.size() - 1);
 
     throwIfnotAllowed(url, conf, request);
-    
     if (redirect(route, res))
-        	return ;
+        return ;  
     
-        // handleRequestType(request, res, path, route, conf);
-        std::map<ft::string, ServerRoute>::const_iterator route_it(
-            conf.routes.find(url)
-        );
+    // Handle DELETE, POST, and PUT requests
+    if ((request.getReqType() == DELETE || request.getReqType() == POST || request.getReqType() == PUT) && !request.isCgi())
+    {
+        res.setResBody(path, request);
+        return;
+    }
+    // Handle file or directory requests
+    if (is_file(path))
+    {
+        handleFileRequest(path, request, res, conf);
+        return;
+    }
+    if (!is_dir(path))
+        throw ErrorPage(conf,"404", "Not Found");
+
+    // Handle directory responses (index or autoindex)
+    handleDirectoryResponse(route, path, request, res,conf);
     
-        // Didn't find the dir
-        if (route_it == conf.routes.end())
-            throw ErrorPage(conf, "404","Not Found");
-    std::cout << "Path: " << path << std::endl;
-    
-    res.setResBody(path, request);
+    // handleRequestType(request, res, path, route, conf);
+    std::map<ft::string, ServerRoute>::const_iterator route_it(
+        conf.routes.find(url));
+
+    // Didn't find the dir
+    if (route_it == conf.routes.end())
+        throw ErrorPage(conf, "404","Not Found");
+}
+void ServerManager::handleFileRequest(const std::string& path, Request& request, Response& res, const ServerTraits& conf)
+{
+    (void)conf;
+    if (request.isCgi())
+    {
+        // Cgi cgi;
+        // cgi.SetEnv(this->envMap, res, request);
+        // cgi.HandleCgi(res, request, conf.root, conf);
+    }
+    else
+        res.setResBody(path, request);
+}
+void ServerManager::handleDirectoryResponse(const ServerRoute& route, const std::string& path, 
+    const Request& request, Response& res,const ServerTraits& conf)
+{
+    // Check for index files
+    for (size_t i = 0; i < route.index.size(); ++i)
+    {
+        std::string indexPath = route.root + route.index[i];
+        if (is_file(indexPath))
+        {
+            res.setResBody(indexPath, request.getReqUrl());
+            return;
+        }
+    }
+
+    // Handle autoindex if enabled
+    if (route.autoindex)
+    {
+        res.setResBody(path, request, true);
+        return;
+    }
+
+    throw ErrorPage(conf,"404", "Not Found");
 }
 
 void ServerManager::normalizeUrl(ft::string& url) {
-    // Remove trailing slash if it's not the root
-    if (url.back() == '/' && url.size() > 1)
+    // Remove trailing slash if itif's not the root
+    if (url.size() > 1 && url[url.size() - 1] == '/')
         url.resize(url.size() - 1);
 
     // Replace duplicate slashes with a single slash

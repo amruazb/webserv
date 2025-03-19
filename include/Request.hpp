@@ -22,6 +22,8 @@ private:
     std::map<std::string, std::string>	    _request;
 	std::map<std::string, std::string>	    _queryMap;
     e_requestType                            _type;
+    bool								_isCgi;
+  
 
 public:
     Request(const std::string &raRequest);
@@ -38,6 +40,7 @@ public:
     std::string							replaceChar(std::string str);
 	std::string							strToUpper(std::string str);
     e_requestType setReqType(const std::string& method) const;
-
+    bool isCgiRequest(const std::string& url) const;
+    bool isCgi() const;
     
 };

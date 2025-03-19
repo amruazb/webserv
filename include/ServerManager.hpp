@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Response.hpp"
 #include "webserv.hpp"
 class Server;
 class Request;
@@ -32,7 +33,10 @@ class ServerManager
         void throwIfnotAllowed(const string& url, const ServerTraits& conf,
             const Request& request);
         bool   redirect(const ServerRoute& route, Response& res);
-};
+        void handleFileRequest(const std::string& path, Request& request, Response& res, const ServerTraits& conf);
+        void handleDirectoryResponse(const ServerRoute& route, const std::string& path,
+             const Request& request, Response& res,const ServerTraits& conf);
+    };
 void handle_exit(int sig);
 
 

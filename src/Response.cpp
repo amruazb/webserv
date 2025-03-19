@@ -49,9 +49,9 @@ void Response::setCode(std::string code)
 {
     this->code = code;
 }
-void Response::setMssg(std::string mssg)
+void Response::setMssg(std::string msg)
 {
-    mssg = mssg;
+    mssg = msg;
 }
 void Response::appendHeader(const std::string& str)
 {
@@ -83,18 +83,93 @@ void Response::setErrBody(std::string body, const Request &req)
     header += "\r\n";
    
 }
-void Response::setResBody(std::string path, const Request &req)
+const	std::string	dirList(const std::string& path, const std::string& reqURL)
 {
-    std::string body = ft::file_to_string(path);
-    res_body.clear();
-    res_body = body;
-    content_len = res_body.length();
-    if(req.getReqType() == HEAD)
-        res_body.clear();
-    header += "Content-Type: " + content_type + "\r\n";
-    header += "Content-Length: " + ft::to_string(content_len) + "; charset=utf-8""\r\n";
-    // res += "Connection: close\r\n";
-    header += "\r\n";
+	std::string html = "<html>"
+						"<head>"                                                                                  
+						"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">"               
+						"<title>Directory listing"
+						" </title>"
+                       "</head>"
+                       "<body>"
+                       "<h1>Directory listing"
+					   " </h1>"
+                       "<hr>"
+                       "<ul>";
+	DIR	*dirptr = opendir(path.c_str());
+	if (dirptr == NULL)
+		return	html + "<li>COULD NOT OPEN"
+                      "DIRECTORY</ li></ ul><hr></ body></ html> ";
+	struct dirent *dirElement = readdir(dirptr);
+	while (dirElement)
+	{
+		const	std::string &filename = dirElement->d_name;
+		html += "<li><a href=\"" + reqURL + filename +  "\">" + filename + "</a></li>";
+		dirElement = readdir(dirptr);
+	}
+	closedir(dirptr);
+	return html + "</ul><hr></body></html>";
+}
+void Response::setResBody(std::string path, const Request &req,bool autoindex)
+{
+    std::string body;
+    std::string type;
+    size_t pos;
+
+    // Handle GET, HEAD, DELETE requests
+    if (req.getReqType() != POST && req.getReqType() != PUT) 
+    {
+        if (is_dir(path.c_str())) 
+        {
+            if (autoindex || req.getReqType() == DELETE) 
+                body = dirList(path, req.getReqUrl());
+            else 
+                throw HttpException("404","Not Found");
+        } 
+        else if (is_file(path.c_str())) 
+            body = ft::file_to_string(path);
+        else 
+            throw std::runtime_error("404 Not Found");
+        
+    }
+    // Determine MIME type
+    if ((pos = path.find_last_of('.')) != std::string::npos) 
+    {
+        type = path.substr(pos);
+        std::map<std::string, std::string>::iterator it = this->mimes.find(type);
+        if (it != this->mimes.end()) 
+            this->content_type = it->second;     
+    }
+    // Set response body and content length
+    this->res_body.clear();
+    this->res_body = body;
+    this->content_len = res_body.length();
+    // Handle POST and PUT requests
+    // if (request.getReqType() == POST || request.getReqType() == PUT) {
+    //     if (request.getPutCode() == "201") {
+    //         this->setResponseHeader("201", "Created");
+    //     }
+    //     if (request.getReqType() == POST) {
+    //         this->setResponseHeader("200", "OK");
+    //     }
+    //     this->res_body.clear();
+    // }
+      // Handle HEAD requests
+    if (req.getReqType() == HEAD) 
+        this->res_body.clear();
+    
+    // Handle DELETE requests
+    // if (req.getReqType() == DELETE) 
+    // {
+    //     if (remove(req.getDeleteURL().c_str()) != 0) 
+    //         throw std::runtime_error("Failed to delete file: " + req.getDeleteURL());
+    // }
+
+    // Build response header
+    this->header += "Content-Type: " + content_type + "; charset=utf-8" "\r\n"
+                    "Content-Length: " + ft::to_string(this->content_len) + "\r\n"
+                    "\r\n";
+
 }
 void	Response::parseMimes()
 {
@@ -116,4 +191,22 @@ void	Response::parseMimes()
 		getline(mimieFile, line);
 	}
 	mimieFile.close();
+}
+
+int	is_dir(const string path)
+{
+	struct stat	statbuf;
+
+	if (stat(path.c_str(), &statbuf) != 0)
+		return (0);
+	return (S_ISDIR(statbuf.st_mode));
+}
+
+int is_file(const string path)
+{
+	struct stat	statbuf;
+
+	if (stat(path.c_str(), &statbuf) != 0)
+		return (0);
+	return (S_ISREG(statbuf.st_mode));
 }

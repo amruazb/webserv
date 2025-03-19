@@ -32,13 +32,16 @@ void Request::parseRequest(const std::string& rawRequest)
     std::string line;
     if (std::getline(stream, line))
     {
-            std::istringstream lineStream(line);
-            std::string method, url, version;
-            lineStream >> method >> url >> version;
-            _reqUrl = url;
+        std::istringstream lineStream(line);
+        std::string method, url, version;
+        lineStream >> method >> url >> version;
+        _reqUrl = url;
 
-            // Determine and store the request type
+        // Determine and store the request type
         _type = setReqType(method);
+
+        // Check if the request is for a CGI script
+        _isCgi = isCgiRequest(url);
     }
     // Parse headers
         while (std::getline(stream, line) && line != "\r") 
@@ -119,16 +122,49 @@ std::string Request::replaceotherChar(std::string str)
 	}
 	return(str);
 }
+bool Request::isCgiRequest(const std::string& url) const
+{
+    // List of CGI extensions
+    static  std::vector<std::string> cgiExtensions ;
+     // Populate the vector only once
+     if (cgiExtensions.empty()) {
+        cgiExtensions.push_back(".cgi");
+        cgiExtensions.push_back(".pl");
+        cgiExtensions.push_back(".php");
+    }
+
+    // Check if the URL ends with any of the CGI extensions
+    for (size_t i = 0; i < cgiExtensions.size(); ++i)
+    {
+        if (url.size() >= cgiExtensions[i].size() &&
+            url.compare(url.size() - cgiExtensions[i].size(), cgiExtensions[i].size(), cgiExtensions[i]) == 0)
+        {
+            return true;
+        }
+    }
+
+    // Check if the URL contains "/cgi-bin/"
+    if (url.find("/cgi-bin/") != std::string::npos)
+    {
+        return true;
+    }
+
+    return false;
+}
 e_requestType Request::getReqType() const
 {
     return _type;
+}
+bool Request::isCgi() const
+{
+    return _isCgi;
 }
 
 // int main() {
 //     try {
 //         // Example HTTP request
 //         std::string rawRequest =
-//             "GET /index.html HTTP/1.1\r\n"
+//             "GET /shamna/script HTTP/1.1\r\n"
 //             "Host: www.example.com\r\n"
 //             "User-Agent: Mozilla/5.0\r\n"
 //             "Accept: text/html\r\n"
@@ -136,15 +172,12 @@ e_requestType Request::getReqType() const
 
 //         Request request(rawRequest);
 
-//         const std::string& url = request.getReqUrl();
-//         std::string host = request.getHost();
-
-//         if (host.empty()) {
-//             throw std::runtime_error("400 Bad Request: Missing Host header");
+//         // Check if the request is for a CGI script
+//         if (request.isCgi()) {
+//             std::cout << "This is a CGI request." << std::endl;
+//         } else {
+//             std::cout << "This is not a CGI request." << std::endl;
 //         }
-
-//         std::cout << "Request URL: " << url << std::endl;
-//         std::cout << "Host: " << host << std::endl;
 //     } catch (const std::exception& e) {
 //         std::cerr << "Error: " << e.what() << std::endl;
 //     }

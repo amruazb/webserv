@@ -25,9 +25,11 @@ class Response
         void setMssg(std::string mssg);
         void setResponseHeader(std::string code, std::string mssg);
         void setErrBody(std::string body, const Request &req);
-        void setResBody(std::string body, const Request &req);
+        void setResBody(std::string body, const Request &req,bool autoindex = false);
         void parseMimes();
         void appendHeader(const std::string& str);
         std::string getRes();
         
 };
+int	is_dir(const string path);
+int is_file(const string path);

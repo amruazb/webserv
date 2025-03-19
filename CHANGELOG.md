@@ -53,3 +53,7 @@ Add More Features:
     >Implement support for chunked transfer encoding and POST request body handling.
 Refactor and Clean Up:
     >Refactor large functions for better readability and maintainability.
+
+## Date 19 March
+    # Modify the parse Equest function to check if the request is for CGI script
+    

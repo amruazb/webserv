@@ -6,7 +6,7 @@
 #    By: shmuhamm <shmuhamm@student.42abudhabi.a    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/02/27 11:57:01 by shmuhamm          #+#    #+#              #
-#    Updated: 2025/02/27 12:03:13 by shmuhamm         ###   ########.fr        #
+#    Updated: 2025/03/15 14:26:09 by shmuhamm         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,11 +14,12 @@ NAME	=	webserv
 
 SRCS_FOLDER = ./src
 
-INCLUDE_FOLDER = ./include
+INCLUDE_FOLDER = -I./include -I./lib/string
 
-FILES_NAMES = main.cpp 
+FILES_NAMES = main.cpp Server.cpp ServerManager.cpp Request.cpp ConfigParser.cpp Response.cpp\
+				Client.cpp ServerTraits.cpp
 
-FILES = $(addprefix $(SRCS_FOLDER)/,$(FILES_NAMES))
+FILES = lib/string/ft_string.cpp $(addprefix $(SRCS_FOLDER)/,$(FILES_NAMES))
 
 CXX		=	c++
 
@@ -29,10 +30,10 @@ OBJS	=	$(FILES:.cpp=.o)
 all: 		$(NAME)
 
 .cpp.o:
-			$(CXX) $(CXXFLAGS) -I$(INCLUDE_FOLDER) -c $< -o $@
+			$(CXX) $(CXXFLAGS) $(INCLUDE_FOLDER) -c $< -o $@
 
 $(NAME):	$(OBJS)
-			$(CXX) $(OBJS) $(CXXFLAGS) -I$(INCLUDE_FOLDER) -o $(NAME)
+			$(CXX) $(OBJS) $(CXXFLAGS) $(INCLUDE_FOLDER) -o $(NAME)
 
 clean:
 			/bin/rm -f $(OBJS)

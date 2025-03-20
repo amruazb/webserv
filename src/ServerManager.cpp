@@ -279,7 +279,7 @@ ServerRoute ServerManager::getRoute(string& url, const ServerTraits& conf)
         {
             std::cout << "No route found for URL: " << url << std::endl;
 
-            throw ErrorPage(conf, "404","Not Found");
+            throw ErrorPage(conf, "404 Not Found");
         }
     }
     // Return the found route
@@ -356,7 +356,7 @@ void ServerManager::throwIfnotAllowed(const string& url, const ServerTraits& con
     std::cout << "Request Type: " << reqType << std::endl;
     if (std::count(foundDir.second.limit_except.begin(),
 			foundDir.second.limit_except.end(), reqType) == 0)
-		throw ErrorPage(conf, "405","NOT Allowed" );
+		throw ErrorPage(conf, "405 NOT Allowed" );
 }
 void ServerManager::ProcessResponse(Request &request,Response &res)
 {
@@ -408,7 +408,7 @@ void ServerManager::ProcessResponse(Request &request,Response &res)
         return;
     }
     if (!is_dir(path))
-    throw ErrorPage(conf,"404", "Not Found");
+    throw ErrorPage(conf,"404 Not Found");
 
     // // handleRequestType(request, res, path, route, conf);
     // std::map<ft::string, ServerRoute>::const_iterator route_it(
@@ -427,9 +427,9 @@ void ServerManager::handleFileRequest(const std::string& path, Request& request,
     (void)conf;
     if (request.isCgi())
     {
-        // Cgi cgi;
-        // cgi.SetEnv(this->envMap, res, request);
-        // cgi.HandleCgi(res, request, conf.root, conf);
+        Cgi cgi;
+        cgi.SetEnv(this->envMap, res, request);
+        cgi.HandleCgi(res, request, conf.root, conf);
     }
     else
         res.setResBody(path, request);
@@ -459,7 +459,7 @@ void ServerManager::handleDirectoryResponse(ServerRoute& route, const std::strin
         return;
     }
 std::cout << "Throwing 404 error" << std::endl;
-    throw ErrorPage(conf,"404", "Not Found");
+    throw ErrorPage(conf,"404 Not Found");
 }
 
 void ServerManager::normalizeUrl(ft::string& url) {
@@ -540,13 +540,13 @@ Response ServerManager::ManageRequest(const std::string& buffer)
     }
     catch (const ErrorPage& e)
     {
-        std::cout << "Caught ErrorPage: " << e.what() << " - " << e.getMessage() << std::endl;
-        setErrPage(response, request, e.what(), e.getMessage(), e.getConf());
+        std::cout << "Caught ErrorPage: " << e.what() << " - " << e.what() << std::endl;
+        setErrPage(response, request, e.what(), e.what(), e.getConf());
     }
     catch (const HttpException& e)
     {
-        std::cout << "Caught HttpException: " << e.what() << " - " << e.getMessage() << std::endl;
-        setDefaultErrPage(response, request, e.what(), e.getMessage());
+        std::cout << "Caught HttpException: " << e.what() << " - " << e.what() << std::endl;
+        setDefaultErrPage(response, request, e.what(), e.what());
     }
     catch (const std::exception& e)
     {

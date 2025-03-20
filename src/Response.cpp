@@ -12,7 +12,15 @@ Response::Response()
     setResponseHeader(code, mssg);
     parseMimes();
 }
-
+void	Response::setCgiBody(std::string body)
+{
+	this->res_body.clear();
+	this->res_body = body;
+	this->content_len = res_body.length();
+	this->header += "Content-Type: " + content_type + "; charset=utf-8" CRLF
+					"Content-Length: " + ft::to_string(this->content_len) + CRLF
+					CRLF;
+}
 Response::Response(const Response &src)
 {
     if (this == &src)

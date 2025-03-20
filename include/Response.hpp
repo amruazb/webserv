@@ -1,6 +1,7 @@
 #pragma once
 #include "webserv.hpp"
 #include "error.hpp"
+
 class Request;
 class Response
 {
@@ -20,6 +21,7 @@ class Response
         Response& operator=(const Response &src);
         ~Response();
         std::string getHeader();
+		void setCgiBody(std::string body);
         void setHeader();
         void setCode(std::string code);
         void setMssg(std::string mssg);

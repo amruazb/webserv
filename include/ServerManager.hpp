@@ -36,6 +36,27 @@ class ServerManager
         void handleFileRequest(const std::string& path, Request& request, Response& res, const ServerTraits& conf);
         void handleDirectoryResponse(ServerRoute& route, const std::string& path,
              const Request& request, Response& res,const ServerTraits& conf);
+	
+		class ErrorPage : public std::exception
+		{
+		private:
+			const ServerTraits conf;
+			const std::string msg;
+
+		public:
+			ErrorPage(const ServerTraits& conf, const std::string& msg) : conf(conf), msg(msg) {}
+
+			virtual const char* what() const throw()
+			{
+				return msg.c_str();
+			}
+
+			const ServerTraits& getConf() const
+			{
+				return conf;
+			}
+			virtual ~ErrorPage() throw() {}
+		};
     };
 void handle_exit(int sig);
 

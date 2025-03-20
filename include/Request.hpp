@@ -39,6 +39,9 @@ public:
     std::string                         replaceotherChar(std::string str);
     std::string							replaceChar(std::string str);
 	std::string							strToUpper(std::string str);
+	std::string							getQueryString() const;
+	std::string							getCgiUrl() const;
+	std::string							getPostBody() const;
     e_requestType setReqType(const std::string& method) const;
     bool isCgiRequest(const std::string& url) const;
     bool isCgi() const;

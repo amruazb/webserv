@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: shmuhamm <shmuhamm@student.42abudhabi.a    +#+  +:+       +#+         #
+#    By: aabashee <aabashee@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/02/27 11:57:01 by shmuhamm          #+#    #+#              #
-#    Updated: 2025/03/15 14:26:09 by shmuhamm         ###   ########.fr        #
+#    Updated: 2025/03/20 22:46:00 by aabashee         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,7 +17,7 @@ SRCS_FOLDER = ./src
 INCLUDE_FOLDER = -I./include -I./lib/string
 
 FILES_NAMES = main.cpp Server.cpp ServerManager.cpp Request.cpp ConfigParser.cpp Response.cpp\
-				Client.cpp ServerTraits.cpp
+				Client.cpp ServerTraits.cpp Cgi.cpp
 
 FILES = lib/string/ft_string.cpp $(addprefix $(SRCS_FOLDER)/,$(FILES_NAMES))
 

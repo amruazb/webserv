@@ -28,10 +28,13 @@
 #include "Client.hpp"
 #include "Server.hpp"
 #include "Response.hpp"
+#include "Cgi.hpp"
+#include "error.hpp"
+#include "Pages.hpp"
 
 
 
-
+# define CRLF "\r\n"
 #define BUFFER_SIZE 216000
 
 

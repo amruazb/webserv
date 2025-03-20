@@ -114,6 +114,18 @@ std::map<std::string, std::string> Request::modifyEnv(std::map<std::string, std:
 	}
 	return env;
 }
+std::string Request::getCgiUrl() const{
+
+    std::string path = this->getReqUrl();
+    std::string ret;
+
+    if (path.find_first_of('?') != std::string::npos)
+    {
+        ret = path.substr(0, path.find_first_of('?'));
+        return (ret);
+    }
+    return(path);
+}
 std::string Request::replaceotherChar(std::string str)
 {
 	for (size_t pos = str.find(':'); pos != std::string::npos; pos = str.find(':'))

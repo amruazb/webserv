@@ -1,7 +1,7 @@
 #pragma once
 #include "webserv.hpp"
 #include "error.hpp"
-
+class Request;
 class Response
 {
     private:

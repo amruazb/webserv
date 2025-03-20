@@ -10,7 +10,7 @@ Response::Response()
     res_body = "";
     res = "";
     setResponseHeader(code, mssg);
-    // parseMimes();
+    parseMimes();
 }
 
 Response::Response(const Response &src)
@@ -42,7 +42,7 @@ void Response::setResponseHeader(std::string code, std::string mssg)
 void Response::setHeader()
 {
    header.clear();
-   header += "HTTP/1.1 "+ code + " "+ mssg + "\r\n";
+   header += "HTTP/1.1 " +code + " "+ mssg + "\r\n";
 
 }
 void Response::setCode(std::string code)
@@ -83,33 +83,59 @@ void Response::setErrBody(std::string body, const Request &req)
     header += "\r\n";
    
 }
-const	std::string	dirList(const std::string& path, const std::string& reqURL)
+const std::string dirList(const std::string& path, const std::string& reqURL)
 {
-	std::string html = "<html>"
-						"<head>"                                                                                  
-						"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">"               
-						"<title>Directory listing"
-						" </title>"
+    std::string html = "<html>"
+                       "<head>"
+                       "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">"
+                       "<title>Directory listing</title>"
                        "</head>"
                        "<body>"
-                       "<h1>Directory listing"
-					   " </h1>"
+                       "<h1>Directory listing</h1>"
                        "<hr>"
                        "<ul>";
-	DIR	*dirptr = opendir(path.c_str());
-	if (dirptr == NULL)
-		return	html + "<li>COULD NOT OPEN"
-                      "DIRECTORY</ li></ ul><hr></ body></ html> ";
-	struct dirent *dirElement = readdir(dirptr);
-	while (dirElement)
-	{
-		const	std::string &filename = dirElement->d_name;
-		html += "<li><a href=\"" + reqURL + filename +  "\">" + filename + "</a></li>";
-		dirElement = readdir(dirptr);
-	}
-	closedir(dirptr);
-	return html + "</ul><hr></body></html>";
+
+    std::cout << "Directory path: " << path << std::endl;                  
+    DIR *dirptr = opendir(path.c_str());
+    if (dirptr == NULL)
+        return html + "<li>COULD NOT OPEN DIRECTORY</li></ul><hr></body></html>";
+
+    struct dirent *dirElement;
+    while ((dirElement = readdir(dirptr)) != NULL)
+    {
+        std::string filename = dirElement->d_name;
+        
+        // Skip "." and ".." and hidden files
+        if (filename[0] == '.')
+            continue;
+
+        std::cout << "Filename: " << filename << std::endl;
+
+        std::string fullPath = path + "/" + filename;
+        std::string link = reqURL;
+
+        // Ensure request URL has a trailing slash
+        if (link.empty() || link[link.length() - 1] != '/')
+            link += "/";
+
+        link += filename; // Append filename
+
+        // Check if entry is a directory
+        struct stat statbuf;
+        if (stat(fullPath.c_str(), &statbuf) == 0 && S_ISDIR(statbuf.st_mode))
+        {
+            link += "/"; // Append trailing slash for directories
+        }
+
+        std::cout << "Full Path: " << fullPath << ", Link: " << link << std::endl;
+
+        html += "<li><a href=\"" + link + "\">" + filename + "</a></li>";
+    }
+    closedir(dirptr);
+    return html + "</ul><hr></body></html>";
 }
+
+
 void Response::setResBody(std::string path, const Request &req,bool autoindex)
 {
     std::string body;
@@ -121,16 +147,22 @@ void Response::setResBody(std::string path, const Request &req,bool autoindex)
     {
         if (is_dir(path.c_str())) 
         {
+            std::cout << "is dir" << std::endl;
+            std::cout << autoindex << std::endl;
             if (autoindex || req.getReqType() == DELETE) 
+            {
+                std::cout << "url is" << req.getReqUrl() << std::endl;
+                std::cout<< "path is" << path << std::endl;
                 body = dirList(path, req.getReqUrl());
+            }
             else 
                 throw HttpException("404","Not Found");
         } 
         else if (is_file(path.c_str())) 
             body = ft::file_to_string(path);
         else 
-            throw std::runtime_error("404 Not Found");
-        
+            throw HttpException("404"," Not Found");
+       std::cout <<"sjhfjsfghgfhjgfhsdfg"<<std::endl; 
     }
     // Determine MIME type
     if ((pos = path.find_last_of('.')) != std::string::npos) 
@@ -138,12 +170,12 @@ void Response::setResBody(std::string path, const Request &req,bool autoindex)
         type = path.substr(pos);
         std::map<std::string, std::string>::iterator it = this->mimes.find(type);
         if (it != this->mimes.end()) 
-            this->content_type = it->second;     
+            content_type = it->second;     
     }
     // Set response body and content length
-    this->res_body.clear();
-    this->res_body = body;
-    this->content_len = res_body.length();
+    res_body.clear();
+    res_body = body;
+    content_len = res_body.length();
     // Handle POST and PUT requests
     // if (request.getReqType() == POST || request.getReqType() == PUT) {
     //     if (request.getPutCode() == "201") {
@@ -166,7 +198,7 @@ void Response::setResBody(std::string path, const Request &req,bool autoindex)
     // }
 
     // Build response header
-    this->header += "Content-Type: " + content_type + "; charset=utf-8" "\r\n"
+    header += "Content-Type: " + content_type + "; charset=utf-8" "\r\n"
                     "Content-Length: " + ft::to_string(this->content_len) + "\r\n"
                     "\r\n";
 

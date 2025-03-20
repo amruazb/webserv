@@ -353,13 +353,14 @@ void ServerManager::throwIfnotAllowed(const string& url, const ServerTraits& con
 			reqType = "GET";
 			break;
 	}
+    std::cout << "Request Type: " << reqType << std::endl;
     if (std::count(foundDir.second.limit_except.begin(),
 			foundDir.second.limit_except.end(), reqType) == 0)
 		throw ErrorPage(conf, "405","NOT Allowed" );
 }
 void ServerManager::ProcessResponse(Request &request,Response &res)
 {
-    
+    envMap = request.modifyEnv(envMap);
     std::string host = request.getHost();
     const ft::string& urlx = request.getReqUrl();
 	string url = urlx;
@@ -389,7 +390,7 @@ void ServerManager::ProcessResponse(Request &request,Response &res)
     std::string path = route.root + "/" + url.substr(routeUrl.length());
     if (!path.empty() && path[path.size() - 1] == '/')
         path.resize(path.size() - 1);
-
+        std::cout << "Path: " << path << std::endl;
     throwIfnotAllowed(url, conf, request);
     if (redirect(route, res))
         return ;  
@@ -402,23 +403,24 @@ void ServerManager::ProcessResponse(Request &request,Response &res)
     }
     // Handle file or directory requests
     if (is_file(path))
-    {
+    {       
         handleFileRequest(path, request, res, conf);
         return;
     }
     if (!is_dir(path))
-        throw ErrorPage(conf,"404", "Not Found");
+    throw ErrorPage(conf,"404", "Not Found");
 
-    // Handle directory responses (index or autoindex)
+    // // handleRequestType(request, res, path, route, conf);
+    // std::map<ft::string, ServerRoute>::const_iterator route_it(
+    //     conf.routes.find(url));
+
+    // // Didn't find the dir
+    // if (route_it == conf.routes.end())
+    //     throw ErrorPage(conf, "404","Not Found");
+   
+    // // Handle directory responses (index or autoindex)
     handleDirectoryResponse(route, path, request, res,conf);
     
-    // handleRequestType(request, res, path, route, conf);
-    std::map<ft::string, ServerRoute>::const_iterator route_it(
-        conf.routes.find(url));
-
-    // Didn't find the dir
-    if (route_it == conf.routes.end())
-        throw ErrorPage(conf, "404","Not Found");
 }
 void ServerManager::handleFileRequest(const std::string& path, Request& request, Response& res, const ServerTraits& conf)
 {
@@ -432,9 +434,10 @@ void ServerManager::handleFileRequest(const std::string& path, Request& request,
     else
         res.setResBody(path, request);
 }
-void ServerManager::handleDirectoryResponse(const ServerRoute& route, const std::string& path, 
+void ServerManager::handleDirectoryResponse(ServerRoute& route, const std::string& path, 
     const Request& request, Response& res,const ServerTraits& conf)
 {
+    std::cout << "Handling directory response" << std::endl;
     // Check for index files
     for (size_t i = 0; i < route.index.size(); ++i)
     {
@@ -445,14 +448,17 @@ void ServerManager::handleDirectoryResponse(const ServerRoute& route, const std:
             return;
         }
     }
-
+    std::cout <<route.autoindex<<std::endl;
+    route.autoindex = true;
     // Handle autoindex if enabled
     if (route.autoindex)
     {
+        std::cout << "Handling autoindex" << std::endl;
         res.setResBody(path, request, true);
+        std::cout << "Autoindex set" << std::endl;
         return;
     }
-
+std::cout << "Throwing 404 error" << std::endl;
     throw ErrorPage(conf,"404", "Not Found");
 }
 

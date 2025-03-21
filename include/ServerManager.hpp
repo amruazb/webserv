@@ -15,7 +15,8 @@ class ServerManager
         std::map<std::string,std::string>envMap;
         std::map<int, string> clientBuffers; // To store client data
         std::map<int, bool> isReqComplete;
-       
+        std::string paath;
+
     public:
         ServerManager(const std::vector<ServerTraits>& cnf);
         ~ServerManager();

@@ -1,4 +1,6 @@
 #include "Response.hpp"
+#include <sys/stat.h>
+
 
 Response::Response()
 {
@@ -170,7 +172,6 @@ void Response::setResBody(std::string path, const Request &req,bool autoindex)
             body = ft::file_to_string(path);
         else 
             throw HttpException("404"," Not Found");
-       std::cout <<"sjhfjsfghgfhjgfhsdfg"<<std::endl; 
     }
     // Determine MIME type
     if ((pos = path.find_last_of('.')) != std::string::npos) 
@@ -185,31 +186,50 @@ void Response::setResBody(std::string path, const Request &req,bool autoindex)
     res_body = body;
     content_len = res_body.length();
     // Handle POST and PUT requests
-    // if (request.getReqType() == POST || request.getReqType() == PUT) {
-    //     if (request.getPutCode() == "201") {
-    //         this->setResponseHeader("201", "Created");
-    //     }
-    //     if (request.getReqType() == POST) {
-    //         this->setResponseHeader("200", "OK");
-    //     }
-    //     this->res_body.clear();
-    // }
+    if (req.getReqType() == POST || req.getReqType() == PUT) {
+            std::cout << "----------------------afasdas-" << std::endl;
+        std::cout << req.getReqType() << std::endl;
+        std::cout << req.getPutCode() << std::endl;
+            std::cout << "----------------------afasdas-" << std::endl;
+
+        if (req.getReqType() == POST) {
+            this->setResponseHeader("200", "OK");
+        }
+        if (req.getReqType() == PUT)
+        {
+            this->setResponseHeader("201", "Created");
+        }
+        this->res_body.clear();
+    }
       // Handle HEAD requests
     if (req.getReqType() == HEAD) 
         this->res_body.clear();
     
     // Handle DELETE requests
-    // if (req.getReqType() == DELETE) 
-    // {
-    //     if (remove(req.getDeleteURL().c_str()) != 0) 
-    //         throw std::runtime_error("Failed to delete file: " + req.getDeleteURL());
-    // }
+    if (req.getReqType() == DELETE) 
+    {
+        std::cout << req.getDeleteURL() << std::endl;
+        // if (remove(req.getDeleteURL().c_str()) != 0)
+        //     throw std::runtime_error("Failed to delete file: " + req.getDeleteURL());
+        struct stat buffer;
+        if (stat(req.getDeleteURL().c_str(), &buffer) == 0) {
+            if (remove(req.getDeleteURL().c_str()) != 0)
+                throw std::runtime_error("Failed to delete file: " + req.getDeleteURL());
+        } else {
+            std::cerr << "File not found: " << req.getDeleteURL() << std::endl;
+        }
+
+    }
 
     // Build response header
-    header += "Content-Type: " + content_type + "; charset=utf-8" "\r\n"
-                    "Content-Length: " + ft::to_string(this->content_len) + "\r\n"
-                    "\r\n";
-
+    std::cout << "------------------------------" << std::endl;
+    std::cout << header << std::endl;
+    std::cout << "------------------------------" << std::endl;
+    header += "Content-Type: " + content_type + "; charset=utf-8"
+                                                "\r\n"
+                                                "Content-Length: " +
+              ft::to_string(this->content_len) + "\r\n"
+                                                 "\r\n";
 }
 void	Response::parseMimes()
 {

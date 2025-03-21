@@ -15,7 +15,6 @@
 #include <sstream>
 #include <sys/stat.h>
 #include <stdexcept>
-#include "Request.hpp"
 #include <fstream>
 #include <arpa/inet.h>
 #include "ft_string.hpp"
@@ -27,6 +26,7 @@
 #include <exception>
 #include "Client.hpp"
 #include "Server.hpp"
+#include "Request.hpp"
 #include "Response.hpp"
 #include "Cgi.hpp"
 #include "error.hpp"

@@ -171,6 +171,11 @@ void ServerManager::run(char **envp)
                     {
                         // Send Response
                         Response response = ManageRequest(clientBuffers[pfd.fd]);
+                            std::cout << "-----------------------" << std::endl;
+
+                        std::cout << response.getRes() << std::endl;
+                            std::cout << "-----------------------" << std::endl;
+
                         send(pfd.fd, response.getRes().c_str(), response.getRes().length(), 0);
 
                         // Close Socket
@@ -387,7 +392,7 @@ void ServerManager::ProcessResponse(Request &request,Response &res)
         //  throw HttpException("413","Payload Too Large");
     
     // Construct the full path
-    std::string path = route.root + "/" + url.substr(routeUrl.length());
+    std::string path = route.root  + url.substr(routeUrl.length());
     if (!path.empty() && path[path.size() - 1] == '/')
         path.resize(path.size() - 1);
         std::cout << "Path: " << path << std::endl;
@@ -533,20 +538,20 @@ Response ServerManager::ManageRequest(const std::string& buffer)
 {
     Response response;
     Request request(buffer);
-
     try
     {
-        ProcessResponse(request,response);
+        request.parseRequest(true);
+        ProcessResponse(request, response);
     }
     catch (const ErrorPage& e)
     {
         std::cout << "Caught ErrorPage: " << e.what() << " - " << e.what() << std::endl;
-        setErrPage(response, request, e.what(), e.what(), e.getConf());
+        setErrPage(response, request, e.what(), "", e.getConf());
     }
     catch (const HttpException& e)
     {
         std::cout << "Caught HttpException: " << e.what() << " - " << e.what() << std::endl;
-        setDefaultErrPage(response, request, e.what(), e.what());
+        setDefaultErrPage(response, request, "", e.what());
     }
     catch (const std::exception& e)
     {
@@ -578,14 +583,25 @@ void handle_exit(int sig)
 }
 bool	ServerManager::partialRequest(std::string &buff)
 {
-    std::cout << buff << std::endl;
+    std::string	first("");
+	bool		flag;
+	first = buff;
+	Request	req(first);
+	req.parseRequest();
+	std::map<std::string, std::string> reqMap = req.getRequest();
     // Check if the buffer contains the complete headers
     if (buff.find("\r\n\r\n") == std::string::npos)
 		return (false);
     // Return false if the buffer is empty (no data)
 	if (buff.empty())
 		return (false);
-    // 🚀 FIXME 1.// Handle chunked transfer encoding
-    //          2.// Check if the request is a POST and the content length is not fully received
+    	if (reqMap["Transfer-Encoding:"] == "chunked")
+	{
+		if (buff.find("0" CRLF CRLF) == std::string::npos)
+			return (false);
+		flag = true;
+	}
+	if ((buff.length() < (req.getContLen() + req.getHeaderLength())) && req.getReqType() == POST && !flag)
+		return (false);
     return (true);
 }

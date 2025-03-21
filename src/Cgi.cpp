@@ -22,19 +22,18 @@ Cgi::~Cgi(){
 
 void Cgi::SetEnv(std::map<std::string, std::string> &envMap, Response &res, Request &req){
     (void) res;
-	(void) req;
     
     this->envMap = envMap;
     this->envMap["AUTH_TYPE"] = "null";
     this->envMap["CONTENT_LENGTH"] = this->envMap["HTTP_CONTENT_LENGTH"];
     this->envMap["CONTENT_TYPE"] = this->envMap["HTTP_CONTENT_TYPE"];
     this->envMap["GATEWAY_INTERFACE"] = "CGI/1.1";
-    // this->envMap["PATH_INFO"] = req.getReqUrl();
-    // this->envMap["PATH_TRANSLATED"] = req.getReqUrl();
-    // this->envMap["QUERY_STRING"] = req.getQueryString();
-    // this->envMap["REQUEST_METHOD"] = req.getStrRequestType();
-    // this->envMap["REQUEST_URI"] = req.getQueryUrl();
-    // this->envMap["SCRIPT_NAME"] = req.getReqUrl();
+    this->envMap["PATH_INFO"] = req.getReqUrl();
+    this->envMap["PATH_TRANSLATED"] = req.getReqUrl();
+    this->envMap["QUERY_STRING"] = req.getQueryString();
+    this->envMap["REQUEST_METHOD"] = req.getStrRequestType();
+    this->envMap["REQUEST_URI"] = req.getQueryUrl();
+    this->envMap["SCRIPT_NAME"] = req.getReqUrl();
     this->envMap["SERVER_NAME"] = "WEBSERV";
     this->envMap["SERVER_PORT"] = "8080";
     this->envMap["SERVER_PROTOCOL"] = "HTTP/1.1";
@@ -44,8 +43,8 @@ void Cgi::SetEnv(std::map<std::string, std::string> &envMap, Response &res, Requ
 
 char **Cgi::GetCharEnv(){
 
-    size_t size = this->envMap.size();
-    char **charenv = new char*[size + 1];
+    size_t size =  this->envMap.size();
+    char **charenv = new char*[size + 1]; 
     charenv[size] = NULL;
 
     std::map<std::string, std::string>::iterator b = this->envMap.begin();
@@ -65,9 +64,12 @@ void Cgi::HandleCgi(Response &res, Request &req, std::string rooturl, const Serv
 {
     this->scriptpath = rooturl + req.getCgiUrl();
     this->RunCgi(res, req, conf);
+	std::cout << "handle cgi" << std::endl;
 }
 
-void Cgi::RunCgi(Response &res, Request &req, const ServerTraits& conf){
+void Cgi::RunCgi(Response &res, Request &req, const ServerTraits& conf)
+{
+
     FILE *parent_input = tmpfile();
     FILE *child_output = tmpfile();
 
@@ -83,17 +85,20 @@ void Cgi::RunCgi(Response &res, Request &req, const ServerTraits& conf){
 
     if (req.getReqType() == POST)
     {
-    //    if (fputs(req.getPostBody().c_str(), parent_input) == EOF)
-	//    {
-	// 		fclose(parent_input);
-	// 		fclose(child_output);
-	// 		close(child_out_fd);
-	// 		close(parent_in_fd);
-    //         throw ServerManager::ErrorPage(conf, "500");
-	//    }
+		std::cout << "POSTBODY" << req.getPostBody() << std::endl;
+		if (fputs(req.getPostBody().c_str(), parent_input) == EOF)
+		{
+		
+			fclose(parent_input);
+			fclose(child_output);
+			close(child_out_fd);
+			close(parent_in_fd);
+            throw ServerManager::ErrorPage(conf, "500");
+	   }
 	// std::cout<< "first one"<< std::endl;
        if  (fseek(parent_input, 0, SEEK_SET) == -1)
 	   {
+		std::cout << "her cgi" << std::endl;
 			fclose(parent_input);
 			fclose(child_output);
 			close(child_out_fd);

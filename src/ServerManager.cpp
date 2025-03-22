@@ -14,9 +14,7 @@ ServerManager::ServerManager(const std::vector<ServerTraits>& cnf)
         for (size_t i = 0; i < cnf.size(); ++i) 
         {
             // Create a new server with the given configuration
-            servers.push_back(Server(cnf[i]));
-            std::cout <<"Debug from Server Manager construc"<<cnf[i].root<<std::endl;
-            std::vector<Server>::iterator it;
+            servers.push_back(Server(cnf[i]));            std::vector<Server>::iterator it;
 
             // Initialize the server socket for polling
             struct pollfd socketConfig;
@@ -27,8 +25,6 @@ ServerManager::ServerManager(const std::vector<ServerTraits>& cnf)
             // Add the socket to the poll list
             sockets.push_back(socketConfig);
 
-            // Log a success message
-            std::cout << "✅ Server is listening on port " << cnf[i].listen_port << std::endl;
         }
     } catch (const std::exception& e) {
         // Log an error message and re-throw the exception
@@ -143,10 +139,8 @@ void ServerManager::run(char **envp)
                     try
                     {    
                         getClientByFd(clients, pfd.fd)->readData(clientBuffers[pfd.fd]);
-                        std::cout << clientBuffers[pfd.fd] << std::endl;
                         // Check for Request Completion
                         isReqComplete[pfd.fd] = partialRequest(clientBuffers[pfd.fd]);
-                        std::cout << isReqComplete[pfd.fd] << std::endl;
                     }
                     catch (const std::exception& e)
                     {
@@ -167,10 +161,6 @@ void ServerManager::run(char **envp)
                     {
                         // Send Response
                         Response response = ManageRequest(clientBuffers[pfd.fd]);
-                            std::cout << "-----------------------" << std::endl;
-
-                        std::cout << response.getRes() << std::endl;
-                            std::cout << "-----------------------" << std::endl;
 
                         send(pfd.fd, response.getRes().c_str(), response.getRes().length(), 0);
 
@@ -226,10 +216,6 @@ static std::vector<Server>::iterator findServer(std::vector<Server>::iterator st
 
     for (it = start; it != end; ++it)
 	{
-        	std::cout << "Checking HOST: Address=" << address
-          << ", Port=" << port << std::endl;
-        std::cout << "Checking Server: Address=" << (*it).getConf().listen_address
-          << ", Port=" << (*it).getConf().listen_port << std::endl;
         if ((((*it).getConf().listen_address == address) || ((*it).getConf().listen_address == htonl(INADDR_ANY))) && (*it).getConf().listen_port == port)
             return (it);
         bool foundAddStr = std::find((*it).getConf().server_name.begin(),
@@ -278,8 +264,6 @@ ServerRoute ServerManager::getRoute(string& url, const ServerTraits& conf)
         // If no root route is found, throw an error
         if (route_it == conf.routes.end())
         {
-            std::cout << "No route found for URL: " << url << std::endl;
-
             throw ErrorPage(conf, "404 Not Found");
         }
     }
@@ -322,7 +306,6 @@ void ServerManager::throwIfnotAllowed(const string& url, const ServerTraits& con
 			reqType = "GET";
 			break;
 	}
-    std::cout << "Request Type: " << reqType << std::endl;
     if (std::count(foundDir.second.limit_except.begin(),
 			foundDir.second.limit_except.end(), reqType) == 0)
 		throw ErrorPage(conf, "405 NOT Allowed" );
@@ -358,7 +341,6 @@ void ServerManager::ProcessResponse(Request &request,Response &res)
     std::string path = route.root  + url.substr(routeUrl.length());
     if (!path.empty() && path[path.size() - 1] == '/')
         path.resize(path.size() - 1);
-        std::cout << "Path: " << path << std::endl;
     throwIfnotAllowed(url, conf, request);
     if (redirect(route, res))
         return ;  
@@ -403,9 +385,7 @@ void ServerManager::handleFileRequest(const std::string& path, Request& request,
 }
 void ServerManager::handleDirectoryResponse(ServerRoute& route, const std::string& path, 
     const Request& request, Response& res,const ServerTraits& conf)
-{
-    std::cout << "Handling directory response" << std::endl;
-    // Check for index files
+{    // Check for index files
     for (size_t i = 0; i < route.index.size(); ++i)
     {
         std::string indexPath = route.root + route.index[i];
@@ -415,15 +395,14 @@ void ServerManager::handleDirectoryResponse(ServerRoute& route, const std::strin
             return;
         }
     }
+    
+
     // Handle autoindex if enabled
     if (route.autoindex)
     {
-        std::cout << "Handling autoindex" << std::endl;
         res.setResBody(path, request, true);
-        std::cout << "Autoindex set" << std::endl;
         return;
     }
-std::cout << "Throwing 404 error" << std::endl;
     throw ErrorPage(conf,"404 Not Found");
 }
 

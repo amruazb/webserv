@@ -109,8 +109,6 @@ void Response::setResBody(std::string path, const Request &req,bool autoindex)
         {
             if (autoindex || req.getReqType() == DELETE) 
             {
-                std::cout << "url is" << req.getReqUrl() << std::endl;
-                std::cout<< "path is" << path << std::endl;
                 body = dirList(path, req.getReqUrl());
             }
             else 
@@ -135,11 +133,6 @@ void Response::setResBody(std::string path, const Request &req,bool autoindex)
     content_len = res_body.length();
     // Handle POST and PUT requests
     if (req.getReqType() == POST || req.getReqType() == PUT) {
-            std::cout << "----------------------afasdas-" << std::endl;
-        std::cout << req.getReqType() << std::endl;
-        std::cout << req.getPutCode() << std::endl;
-            std::cout << "----------------------afasdas-" << std::endl;
-
         if (req.getReqType() == POST) {
             this->setResponseHeader("200", "OK");
         }
@@ -160,10 +153,6 @@ void Response::setResBody(std::string path, const Request &req,bool autoindex)
 			throw std::runtime_error("400");
     }
 
-    // Build response header
-    std::cout << "------------------------------" << std::endl;
-    std::cout << header << std::endl;
-    std::cout << "------------------------------" << std::endl;
     header += "Content-Type: " + content_type + "; charset=utf-8"
                                                 "\r\n"
                                                 "Content-Length: " +

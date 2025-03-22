@@ -64,7 +64,6 @@ void Cgi::HandleCgi(Response &res, Request &req, std::string rooturl, const Serv
 {
     this->scriptpath = rooturl + req.getCgiUrl();
     this->RunCgi(res, req, conf);
-	std::cout << "handle cgi" << std::endl;
 }
 
 void Cgi::RunCgi(Response &res, Request &req, const ServerTraits& conf)
@@ -85,7 +84,6 @@ void Cgi::RunCgi(Response &res, Request &req, const ServerTraits& conf)
 
     if (req.getReqType() == POST)
     {
-		std::cout << "POSTBODY" << req.getPostBody() << std::endl;
 		if (fputs(req.getPostBody().c_str(), parent_input) == EOF)
 		{
 		
@@ -95,10 +93,8 @@ void Cgi::RunCgi(Response &res, Request &req, const ServerTraits& conf)
 			close(parent_in_fd);
             throw ServerManager::ErrorPage(conf, "500");
 	   }
-	// std::cout<< "first one"<< std::endl;
        if  (fseek(parent_input, 0, SEEK_SET) == -1)
 	   {
-		std::cout << "her cgi" << std::endl;
 			fclose(parent_input);
 			fclose(child_output);
 			close(child_out_fd);
@@ -110,7 +106,6 @@ void Cgi::RunCgi(Response &res, Request &req, const ServerTraits& conf)
     pid_t pid;
 
     pid = fork();
-	// std::cout<< "second one"<< std::endl;
     if (pid == -1)
     {
 		fclose(parent_input);
@@ -134,7 +129,6 @@ void Cgi::RunCgi(Response &res, Request &req, const ServerTraits& conf)
 			close(parent_in_fd);
             throw ServerManager::ErrorPage(conf, "500");
 		}
-		// std::cout<< "4 one"<< std::endl;
         if (dup2(child_out_fd, STDOUT_FILENO) == -1)
 		{
 			fclose(parent_input);
@@ -146,12 +140,8 @@ void Cgi::RunCgi(Response &res, Request &req, const ServerTraits& conf)
 
 		std::cerr << this->scriptpath <<std::endl;
         char *const *argv = NULL;
-		std::cout<< "5 one"<< std::endl;
 		if (execve(this->scriptpath.c_str(), argv, env) == -1)
 		{
-			std::cout<< this->scriptpath << std::endl;
-			std::cout<< argv << std::endl;
-			std::cout<< env << std::endl;
 			for (int i = 0; env[i] != NULL; i++)
 				free(env[i]);
 			delete[] env;
@@ -184,8 +174,6 @@ void Cgi::RunCgi(Response &res, Request &req, const ServerTraits& conf)
 		    outchild = waitpid(pid, &status, WNOHANG);
             clock_t end = clock();
             time = static_cast<double>(end - start) / CLOCKS_PER_SEC;
-            // std::cerr << "outchild: " << outchild << "time :" << time << std::endl;
-            // std::cout<< "6 one"<< std::endl;
             if (time > 5)
             {
                 kill(pid, SIGTERM);
@@ -196,7 +184,6 @@ void Cgi::RunCgi(Response &res, Request &req, const ServerTraits& conf)
                 throw ServerManager::ErrorPage(conf, "504");
             }
         }
-		// std::cout<< "7 one"<< std::endl;
         if (WIFEXITED(status) == true && WEXITSTATUS(status) == EXIT_FAILURE)
         {
 			fclose(parent_input);
@@ -210,7 +197,6 @@ void Cgi::RunCgi(Response &res, Request &req, const ServerTraits& conf)
 		std::string body = "";
 
 		memset(read_buffer, 0, CGI_BUFF);
-		// std::cout<< "8 one"<< std::endl;
 		if (fseek(child_output, 0, SEEK_SET) != 0)
 		{
 			fclose(parent_input);
@@ -225,7 +211,6 @@ void Cgi::RunCgi(Response &res, Request &req, const ServerTraits& conf)
 			body += read_buffer;
 			memset(read_buffer, 0, CGI_BUFF);
 		}
-		// std::cerr << body << std::endl;
         // parse response.
     
         if (body.find("\r\n\r\n") != std::string::npos)

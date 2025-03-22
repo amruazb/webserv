@@ -404,7 +404,6 @@ void	Request::setDeleteURL()
 	pos = this->getReqUrl().find_last_of("/");
 	if (pos != std::string::npos)
 		this->deleteURl = this->getReqUrl().substr(pos + 1, this->getReqUrl().length());
-	std::cout << "getDelete: " << this->deleteURl << std::endl;
 }
 bool Request::isCgiRequest(const std::string& url) const
 {
@@ -472,28 +471,3 @@ bool Request::isCgi() const
 {
     return _isCgi;
 }
-
-// int main() {
-//     try {
-//         // Example HTTP request
-//         std::string rawRequest =
-//             "GET /shamna/script HTTP/1.1\r\n"
-//             "Host: www.example.com\r\n"
-//             "User-Agent: Mozilla/5.0\r\n"
-//             "Accept: text/html\r\n"
-//             "\r\n";
-
-//         Request request(rawRequest);
-
-//         // Check if the request is for a CGI script
-//         if (request.isCgi()) {
-//             std::cout << "This is a CGI request." << std::endl;
-//         } else {
-//             std::cout << "This is not a CGI request." << std::endl;
-//         }
-//     } catch (const std::exception& e) {
-//         std::cerr << "Error: " << e.what() << std::endl;
-//     }
-
-//     return 0;
-// }

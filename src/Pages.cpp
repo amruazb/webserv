@@ -26,9 +26,6 @@ const std::string dirList(const std::string& path, const std::string& reqURL)
         // Skip "." and ".." and hidden files
         if (filename[0] == '.')
             continue;
-
-        std::cout << "Filename: " << filename << std::endl;
-
         std::string fullPath = path + "/" + filename;
         std::string link = reqURL;
 
@@ -44,9 +41,6 @@ const std::string dirList(const std::string& path, const std::string& reqURL)
         {
             link += "/"; // Append trailing slash for directories
         }
-
-        std::cout << "Full Path: " << fullPath << ", Link: " << link << std::endl;
-
         html += "<li><a href=\"" + link + "\">" + filename + "</a></li>";
     }
     closedir(dirptr);
@@ -55,9 +49,6 @@ const std::string dirList(const std::string& path, const std::string& reqURL)
 
 const	std::string	getErrPage(const std::string& code, const std::string& mssg)
 {
-	// if (conf.error_pages.find(code) != conf.error_pages.end())
-	// 	return (conf.error_pages.find(code)->second);
-
 	std::string	html = "<!DOCTYPE html>"
 						"<html lang=\"en\">"
 						"<head>"

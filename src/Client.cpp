@@ -37,11 +37,9 @@ Client::~Client()
 Client* getClientByFd(std::vector<Client>& clients, int fd) {
     for (std::vector<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
         if (it->getFd() == fd) {
-            // std::cout << "found the client"<<it->getFd() << std::endl;
             return &(*it);
         }
     }
-    std::cout << "Not found the client" << std::endl;
     return NULL;
 }
 
@@ -65,7 +63,6 @@ int Client::readData(string &buff)
 void removeClientByFd(std::vector<Client> &clients, int fd) {
     for (std::vector<Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
         if (it->getFd() == fd) {
-            std::cout << "Removing client with fd: " << fd << std::endl;
             clients.erase(it); // Remove the client
             return; // Stop after erasing to prevent iterator invalidation
         }
@@ -73,9 +70,6 @@ void removeClientByFd(std::vector<Client> &clients, int fd) {
 }
 
 void printClients(std::vector<Client> &clients) {
-    std::cout << "Current clients: ";
     for (size_t i = 0; i < clients.size(); ++i) {
-        std::cout << clients[i].getFd() << " ";
     }
-    std::cout << std::endl;
 }

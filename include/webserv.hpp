@@ -29,7 +29,6 @@
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Cgi.hpp"
-#include "error.hpp"
 #include "Pages.hpp"
 
 

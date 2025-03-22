@@ -1,6 +1,6 @@
 #pragma once
 #include "webserv.hpp"
-#include "error.hpp"
+#include "Pages.hpp"
 
 class Request;
 class Response

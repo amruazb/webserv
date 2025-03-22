@@ -93,57 +93,7 @@ void Response::setErrBody(std::string body, const Request &req)
     header += "\r\n";
    
 }
-const std::string dirList(const std::string& path, const std::string& reqURL)
-{
-    std::string html = "<html>"
-                       "<head>"
-                       "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">"
-                       "<title>Directory listing</title>"
-                       "</head>"
-                       "<body>"
-                       "<h1>Directory listing</h1>"
-                       "<hr>"
-                       "<ul>";
 
-    std::cout << "Directory path: " << path << std::endl;                  
-    DIR *dirptr = opendir(path.c_str());
-    if (dirptr == NULL)
-        return html + "<li>COULD NOT OPEN DIRECTORY</li></ul><hr></body></html>";
-
-    struct dirent *dirElement;
-    while ((dirElement = readdir(dirptr)) != NULL)
-    {
-        std::string filename = dirElement->d_name;
-        
-        // Skip "." and ".." and hidden files
-        if (filename[0] == '.')
-            continue;
-
-        std::cout << "Filename: " << filename << std::endl;
-
-        std::string fullPath = path + "/" + filename;
-        std::string link = reqURL;
-
-        // Ensure request URL has a trailing slash
-        if (link.empty() || link[link.length() - 1] != '/')
-            link += "/";
-
-        link += filename; // Append filename
-
-        // Check if entry is a directory
-        struct stat statbuf;
-        if (stat(fullPath.c_str(), &statbuf) == 0 && S_ISDIR(statbuf.st_mode))
-        {
-            link += "/"; // Append trailing slash for directories
-        }
-
-        std::cout << "Full Path: " << fullPath << ", Link: " << link << std::endl;
-
-        html += "<li><a href=\"" + link + "\">" + filename + "</a></li>";
-    }
-    closedir(dirptr);
-    return html + "</ul><hr></body></html>";
-}
 
 
 void Response::setResBody(std::string path, const Request &req,bool autoindex)
@@ -157,8 +107,6 @@ void Response::setResBody(std::string path, const Request &req,bool autoindex)
     {
         if (is_dir(path.c_str())) 
         {
-            std::cout << "is dir" << std::endl;
-            std::cout << autoindex << std::endl;
             if (autoindex || req.getReqType() == DELETE) 
             {
                 std::cout << "url is" << req.getReqUrl() << std::endl;
@@ -166,12 +114,12 @@ void Response::setResBody(std::string path, const Request &req,bool autoindex)
                 body = dirList(path, req.getReqUrl());
             }
             else 
-                throw HttpException("404","Not Found");
+                throw ("404");
         } 
         else if (is_file(path.c_str())) 
             body = ft::file_to_string(path);
         else 
-            throw HttpException("404"," Not Found");
+            throw ("404");
     }
     // Determine MIME type
     if ((pos = path.find_last_of('.')) != std::string::npos) 

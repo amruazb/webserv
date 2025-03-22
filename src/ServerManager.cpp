@@ -1,10 +1,6 @@
 #include "ServerManager.hpp"
 
 bool isExit = false;
-// 🚀 FIXME:: Ask teammate about storing the info in config
-//          ip address and port is needed to initialize the server
-//          Discuss how address and ip address (obtained from server.config)are stored
-//          needs to change the server constructor accordingly
 
 /**
  * Constructs a ServerManager with the given server configurations.
@@ -290,39 +286,7 @@ ServerRoute ServerManager::getRoute(string& url, const ServerTraits& conf)
     // Return the found route
     return route_it->second;
 }
-const	std::string	getErrPage(const std::string& code, const std::string& mssg)
-{
-	// if (conf.error_pages.find(code) != conf.error_pages.end())
-	// 	return (conf.error_pages.find(code)->second);
 
-	std::string	html = "<!DOCTYPE html>"
-						"<html lang=\"en\">"
-						"<head>"
-						"	<meta charset=\"UTF-8\">"
-						"	<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
-						"	<title>" + code + " " + mssg + "</title>"
-						""
-						"	<style>"
-						"		h1 {"
-						"			text-align: center;"
-						"			margin-top: 40px;"
-						"			color: red;"
-						"		}"
-						"		h3 {"
-						"			text-align: center;"
-						"		}"
-						""
-						"	</style>"
-						"</head>"
-						"<body>"
-						"	<h1>" + code + " " + mssg + "</h1>"
-						"	<hr>"
-						"	<h3>webserv server</h3>"
-						"</body>"
-						"</html>";
-
-	return (html);
-}
 /*
 * Check if the request is allowed for the given URL
 * If the request type is not allowed, throw a 405 error
@@ -371,25 +335,24 @@ void ServerManager::ProcessResponse(Request &request,Response &res)
 	string url = urlx;
     
     if (host.empty())
-        throw HttpException("400", "Bad Request");
+        throw std::runtime_error("400");
 
     // Find the server that matches the host
     std::vector<Server>::iterator serv_it = findServer(
                 servers.begin(), servers.end(), host);
     if (serv_it == servers.end())
-       throw HttpException("400", "Bad Request");
+       throw std::runtime_error("400");
     
     //Get the Server Configuration
 	const ServerTraits& conf = (*serv_it).getConf(); 
 	normalizeUrl(url);
-        std::cout << "URL: " << url << std::endl;
     // Get the route for the URL
     string routeUrl = url;
     ServerRoute route = getRoute(routeUrl, conf);
     if(route.root.empty())
         route.root = conf.root;//default root
-    // if(conf.client_max_body_size<(request.getBody().size())+request.getReqUrl().size())
-        //  throw HttpException("413","Payload Too Large");
+    if (conf.client_max_body_size < (request.getContLen() + request.getHeaderLength()))
+         throw ErrorPage(conf, "400");
     
     // Construct the full path
     std::string path = route.root  + url.substr(routeUrl.length());
@@ -413,15 +376,14 @@ void ServerManager::ProcessResponse(Request &request,Response &res)
         return;
     }
     if (!is_dir(path))
-    throw ErrorPage(conf,"404 Not Found");
-
-    // // handleRequestType(request, res, path, route, conf);
+        throw ErrorPage(conf, "404");
+    // handleRequestType(request, res, path, route, conf);
     // std::map<ft::string, ServerRoute>::const_iterator route_it(
     //     conf.routes.find(url));
 
     // // Didn't find the dir
     // if (route_it == conf.routes.end())
-    //     throw ErrorPage(conf, "404","Not Found");
+    //     throw ErrorPage(conf, "404");
    
     // // Handle directory responses (index or autoindex)
     handleDirectoryResponse(route, path, request, res,conf);
@@ -453,8 +415,6 @@ void ServerManager::handleDirectoryResponse(ServerRoute& route, const std::strin
             return;
         }
     }
-    std::cout <<route.autoindex<<std::endl;
-    route.autoindex = true;
     // Handle autoindex if enabled
     if (route.autoindex)
     {
@@ -509,35 +469,22 @@ void setDefaultErrPage(Response &res, const Request &req, const std::string& cod
 
 static void setErrPage(Response &res, const Request &req, const std::string& code, const std::string &mssg, const ServerTraits& conf)
 {
-    std::string body;
-    try
-    {
-        std::string body;
-
-        // Check if a custom error page exists for the given code
-        if (conf.error_pages.find(code) != conf.error_pages.end())
-        {
-            std::cout << "Using custom error page for code " << code << std::endl;
-            body = conf.error_pages.find(code)->second;
-        }
-        else
-        {
-            std::cout << "Using default error page for code " << code << std::endl;
-            body = getCachedErrPage(code, mssg);
-        }
-
-        setErrorResponse(res, req, code, mssg, body);
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << "Error in setErrPage: " << e.what() << std::endl;
-        setErrorResponse(res, req, "500", "Internal Server Error", getCachedErrPage("500", "Internal Server Error"));
-    }
+    res.setResponseHeader(code, mssg);
+	string page;
+	if (conf.error_pages.find(code) != conf.error_pages.end())
+		page = conf.error_pages.find(code)->second;
+	else
+		page = getErrPage(code, mssg);
+	
+	res.setErrBody(page, req);
 }
 Response ServerManager::ManageRequest(const std::string& buffer)
 {
     Response response;
     Request request(buffer);
+    string arr[] = {"400", "403", "404", "405", "500", "504"};
+	string msgArr[] = {"Bad Request", "Forbidden", "Not Found", "Method Not Allowed",
+		"Internal Server Error", "Gateway Timeout"};
     try
     {
         request.parseRequest(true);
@@ -545,18 +492,21 @@ Response ServerManager::ManageRequest(const std::string& buffer)
     }
     catch (const ErrorPage& e)
     {
-        std::cout << "Caught ErrorPage: " << e.what() << " - " << e.what() << std::endl;
-        setErrPage(response, request, e.what(), "", e.getConf());
+        string what = e.what();
+
+	    setErrPage(response, request, what, msgArr[(std::find(arr, arr + 6, what) - arr)], e.getConf());
     }
-    catch (const HttpException& e)
+    catch (const std::runtime_error& e)
     {
-        std::cout << "Caught HttpException: " << e.what() << " - " << e.what() << std::endl;
-        setDefaultErrPage(response, request, "", e.what());
+        string what = e.what();
+
+		setDefaultErrPage(response, request, what, msgArr[(std::find(arr, arr + 6, what) - arr)]);
     }
     catch (const std::exception& e)
     {
-        std::cerr << "Unhandled exception: " << e.what() << std::endl;
-        setDefaultErrPage(response, request, "500", "Internal Server Error");
+       std::cerr << "Error: " << e.what() << std::endl;
+		response.setResponseHeader("500", "Internal Server Error");
+		response.setErrBody(getErrPage("500", "Internal Server Error"), request);
     }
     return response;
 }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerTraits.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bammar <bammar@student.42abudhabi.ae>      +#+  +:+       +#+        */
+/*   By: shmuhamm <shmuhamm@student.42abudhabi.a    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/02 03:08:40 by bammar            #+#    #+#             */
-/*   Updated: 2023/09/25 19:18:23 by bammar           ###   ########.fr       */
+/*   Updated: 2025/03/22 11:13:35 by shmuhamm         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,5 +34,5 @@ ServerRoute::ServerRoute()
 	index.push_back("index");
 	index.push_back("index.html");
 
-	autoindex = false;
+	autoindex = true;
 }

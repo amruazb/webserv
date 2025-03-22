@@ -11,29 +11,22 @@ Server::Server(const ServerTraits& cnf) : conf(cnf)
     serverFd = socket(AF_INET,SOCK_STREAM, 0);
     if (serverFd < 0)
 		throw std::runtime_error("Socket Error");
-    
     // Set the Socket to Non-Blocking Mode
     int flags = fcntl(serverFd, F_GETFL, 0);
     if (flags < 0)
         throw std::runtime_error("fcntl Error");
-
     if (fcntl(serverFd, F_SETFL, flags | O_NONBLOCK) < 0)
         throw std::runtime_error("fcntl Error");
-
     if (fcntl(serverFd, F_SETFD, FD_CLOEXEC) < 0)
         throw std::runtime_error("fcntl Error");
-
     // Enable SO_REUSEADDR(Allows the same port to 
-    // be reused immediately after the server rest) Option
-    
+    // be reused immediately after the server rest) Option   
     int optval = 1;
     if (setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) < 0)
-		throw std::runtime_error("setsockopt Error");
-    
+		throw std::runtime_error("setsockopt Error");   
     //  Bind the Socket to the Address and Port
     if (bind(serverFd, (struct sockaddr *)&address, sizeof(address)) < 0)
 		throw std::runtime_error("Bind Error");
-  
     if (listen(serverFd, 50) < 0)
     throw std::runtime_error("Listen Error");  
     

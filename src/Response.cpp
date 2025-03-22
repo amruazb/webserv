@@ -156,17 +156,8 @@ void Response::setResBody(std::string path, const Request &req,bool autoindex)
     // Handle DELETE requests
     if (req.getReqType() == DELETE) 
     {
-        std::cout << req.getDeleteURL() << std::endl;
-        // if (remove(req.getDeleteURL().c_str()) != 0)
-        //     throw std::runtime_error("Failed to delete file: " + req.getDeleteURL());
-        struct stat buffer;
-        if (stat(req.getDeleteURL().c_str(), &buffer) == 0) {
-            if (remove(req.getDeleteURL().c_str()) != 0)
-                throw std::runtime_error("Failed to delete file: " + req.getDeleteURL());
-        } else {
-            std::cerr << "File not found: " << req.getDeleteURL() << std::endl;
-        }
-
+        if (remove(req.getDeleteURL().c_str()) != 0)
+			throw std::runtime_error("400");
     }
 
     // Build response header

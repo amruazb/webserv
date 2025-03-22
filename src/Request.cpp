@@ -262,12 +262,11 @@ void	Request::fileUpload()
 		size_t	pos = this->_reqUrl.find_last_of('/');
 		fileName = this->_reqUrl.substr(pos + 1, this->_reqUrl.length());
 	}
-	mkdir("webservfileupload", 0777);
-	std::ofstream	outfile(("webservfileupload/" + fileName).c_str());
+	// mkdir("webservfileupload", 0777);
+	std::ofstream	outfile((fileName).c_str());
 	std::string	body = _buffCopy.substr(this->getHeaderLength() + 4, ft::from_string<int>(cont_length));
 	std::string::size_type pos1 = body.find("\r\n\r\n");
 	body = body.substr(pos1 + 4, ft::from_string<int>(cont_length));
-	std::cout << "Here" << std::endl;
 	if (!outfile.good())
 		this->_putCode = "201";
 	outfile << body;
